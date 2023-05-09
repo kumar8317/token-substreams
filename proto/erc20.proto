@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package zdexer.eth.erc20.v1;
+
+message Contracts{
+  repeated Contract items = 1;
+}
+
+message Contract {
+  string token_address = 1;
+  string name = 2;
+  string symbol = 3;
+  uint64 decimals = 4;
+  string owner_address = 5;
+  string deploy_trx = 6;
+}
+
+message Transfers {
+  repeated Transfer items = 1;
+}
+
+message Transfer {
+  string trx_hash = 1;
+  uint64 log_index = 2;
+  string from = 3;
+  string to = 4;
+  uint64 log_ordinal = 5;
+  uint64 block_number = 6;
+  string token_address = 7;
+  string quantity = 8;
+  string block_hash = 9;
+  uint64 timestamp = 10;
+  uint32 transaction_index = 11;
+  int32 transaction_type = 12;
+}
+
+message Approvals {
+  repeated Approval items = 1;
+}
+
+message Approval {
+  string trx_hash = 1;
+  string token_address = 2;
+  string spender_address = 3;
+  string quantity = 4;
+  string owner_address = 5;
+}
