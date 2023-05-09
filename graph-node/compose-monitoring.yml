@@ -1,0 +1,40 @@
+version: '2.1'
+
+networks:
+  monitor-net:
+    driver: bridge
+
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - ./data/prometheus:/data/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    networks:
+      - monitor-net
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    volumes:
+      - ./data/grafana:/data/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - postgres_host=${postgres_host}
+      - postgres_user=${postgres_user}
+      - postgres_pass=${postgres_pass}
+      - postgres_db=${postgres_db}
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      - monitor-net

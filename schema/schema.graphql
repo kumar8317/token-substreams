@@ -1,0 +1,169 @@
+type Account @entity {
+  id: ID!
+  ERC721tokens: [ERC721Token!] @derivedFrom(field:"owner_address")
+  ERC721transferFromEvents: [ERC721Transfer!] @derivedFrom(field:"from_address")
+  ERC721transferToEvents:[ERC721Transfer!] @derivedFrom(field:"to_address")
+  ERC721operatorOperator: [ERC721Operator!]! @derivedFrom(field: "operator")
+  ERC721operatorOwner: [ERC721Operator!]! @derivedFrom(field: "owner")
+  ERC1155balances: [ERC1155Balance!]! @derivedFrom(field: "account")
+  ERC1155operatorOwner: [ERC1155Operator!]! @derivedFrom(field: "owner")
+	ERC1155operatorOperator: [ERC1155Operator!]! @derivedFrom(field: "operator")
+  ERC1155transferFromEvents: [ERC1155Transfer!] @derivedFrom(field:"from_address")
+  ERC1155transferToEvents:[ERC1155Transfer!] @derivedFrom(field:"to_address")
+  ERC20balances: [ERC20Balance!]! @derivedFrom(field: "account")
+  ERC20approvalsOwner: [ERC20Approval!]! @derivedFrom(field: "owner")
+	ERC20approvalsSpender: [ERC20Approval!]! @derivedFrom(field: "spender")
+	ERC20transferFromEvent: [ERC20Transfer!]! @derivedFrom(field: "from_address")
+	ERC20transferToEvent: [ERC20Transfer!]! @derivedFrom(field: "to_address")
+}
+
+type ERC721Collection @entity {
+  id: ID!
+  name: String
+  symbol: String
+  supports_metadata: Boolean
+  owner_address: Account!
+  tokens: [ERC721Token!] @derivedFrom(field: "collection")
+  transfers: [ERC721Transfer!] @derivedFrom(field:"collection")
+  operators: [ERC721Operator!] @derivedFrom(field:"collection")
+}
+
+type ERC721Token @entity {
+  id: ID! 
+  collection: ERC721Collection!
+  token_id: String!
+  metadata_uri: String
+  minter_address: Account!,
+  owner_address: Account!,
+  block_number_minted: BigInt,
+  block_number: BigInt,
+  mint_trx: String,
+  approvals: [ERC721Approval!] @derivedFrom(field:"token"),
+  transfers: [ERC721Transfer!] @derivedFrom(field:"token")
+}
+
+type ERC721Transfer @entity {
+  id: ID!
+  collection: ERC721Collection!
+  token: ERC721Token!
+  trx_hash: String!
+  from_address: Account!
+  to_address: Account!
+  log_index: BigInt!
+  block_number: BigInt!
+  block_hash: String
+  timestamp: BigInt
+  transaction_index: Int
+  transacction_type: Int
+}
+
+type ERC721Operator @entity {
+  id: ID!
+  collection: ERC721Collection!
+  owner: Account!
+  operator: Account!
+  approved: Boolean!
+}
+
+type ERC721Approval @entity {
+  id: ID!
+  token: ERC721Token!
+  owner: Account!
+  approval: Account!
+}
+
+
+type ERC1155Collection @entity {
+  id: ID!
+  owner_address: Account!
+  tokens: [ERC1155Token!] @derivedFrom(field: "collection")
+  balances: [ERC1155Balance!] @derivedFrom(field:"collection")
+  transfers: [ERC1155Transfer!] @derivedFrom(field:"collection")
+  operators: [ERC1155Operator!] @derivedFrom(field:"collection")
+}
+
+type ERC1155Token @entity {
+  id: ID! 
+  collection: ERC1155Collection!
+  token_id: String!
+  metadata_uri: String
+  minter_address: Account!,
+  block_number_minted: BigInt,
+  block_number: BigInt,
+  mint_trx: String,
+  balances: [ERC1155Balance!] @derivedFrom(field:"token")
+  transfers: [ERC1155Transfer!] @derivedFrom(field:"token")
+}
+
+type ERC1155Transfer @entity {
+  id: ID!
+  collection: ERC1155Collection!
+  token: ERC1155Token!
+  trx_hash: String!
+  from_address: Account!
+  to_address: Account!
+  quantity: BigInt!
+  log_index: BigInt!
+  block_number: BigInt!
+  block_hash: String
+  timestamp: BigInt
+  transaction_index: Int
+  transacction_type: Int
+}
+
+type ERC1155Balance @entity {
+  id: ID!
+  collection: ERC1155Collection!
+  token: ERC1155Token!
+  account: Account
+  quantity: BigInt!
+}
+
+type ERC1155Operator @entity {
+  id: ID!
+  collection: ERC1155Collection!
+  owner: Account!
+  operator: Account!
+  approved: Boolean!
+}
+
+type ERC20Contract @entity {
+  id: ID!
+  name: String
+  symbol: String
+  decimals: BigInt
+  owner_address: Account!
+  balances: [ERC20Balance!] @derivedFrom(field: "contract")
+	approvals: [ERC20Approval!] @derivedFrom(field: "contract")
+	transfers: [ERC20Transfer!] @derivedFrom(field: "contract")
+}
+
+type ERC20Balance @entity {
+  id: ID!
+  contract: ERC20Contract
+  account: Account
+  quantity: BigInt!
+}
+
+type ERC20Approval @entity {
+	id: ID!
+	contract: ERC20Contract!
+	owner: Account!
+	spender: Account!
+	quantity: BigInt!
+}
+
+type ERC20Transfer @entity {
+  id: ID!
+  contract: ERC20Contract!
+  trx_hash: String!
+  from_address: Account!
+  to_address: Account!
+  quantity: BigInt!
+  log_index: BigInt!
+  block_number: BigInt!
+  block_hash: String
+  timestamp: BigInt
+  transaction_index: Int
+  transacction_type: Int
+}

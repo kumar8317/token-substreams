@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package zdexer.eth.events.v1;
+
+message OwnershipTransfers {
+  repeated OwnershipTransfer items = 1;
+}
+message OwnershipTransfer {
+  string contract_address = 1;
+  string previous_owner = 2;
+  string new_owner = 3;
+}

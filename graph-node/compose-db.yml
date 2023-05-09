@@ -1,0 +1,39 @@
+version: '2.1'
+
+networks:
+  monitor-net:
+    driver: bridge
+
+services:
+  postgres:
+    container_name: postgres-ssp
+    image: postgres:14
+    ports:
+      - "5432:5432"
+    command: ["postgres", "-cshared_preload_libraries=pg_stat_statements"]
+    #command: ["postgres", "-cshared_preload_libraries=pg_stat_statements", "-clog_statement=all"]
+    environment:
+      POSTGRES_USER: ${postgres_user}
+      POSTGRES_PASSWORD: ${postgres_pass}
+      POSTGRES_DB: ${postgres_db}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - monitor-net
+
+  pgweb:
+    container_name: pgweb-ssp
+    image: sosedoff/pgweb:0.11.12
+    restart: on-failure
+    ports:
+      - "8081:8081"
+    command: ["pgweb", "--bind=0.0.0.0", "--listen=8081", "--binary-codec=hex"]
+    links:
+      - postgres:postgres
+    environment:
+      - DATABASE_URL=postgres://${postgres_user}:${postgres_pass}@postgres:5432/${postgres_db}?sslmode=disable
+    depends_on:
+      - postgres
+    networks:
+      - monitor-net

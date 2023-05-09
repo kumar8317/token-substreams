@@ -1,0 +1,8 @@
+[package]
+name = "common"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+prost = "0.11"
+substreams = "0.5"

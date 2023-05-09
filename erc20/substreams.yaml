@@ -1,0 +1,143 @@
+specVersion: v0.1.0
+package:
+  name: "substreams_erc20"
+  version: v0.0.1
+
+imports:
+  database_change: https://github.com/streamingfast/substreams-database-change/releases/download/v0.1.0/substreams-database-change-v0.1.0.spkg
+  entity: https://github.com/streamingfast/substreams-entity-change/releases/download/v0.2.1/substreams-entity-change-v0.2.1.spkg
+  common_events: ../target/common_events-v0.0.1.spkg
+
+protobuf:
+  files:
+    - erc20.proto
+  importPaths:
+    - ./proto
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ../target/wasm32-unknown-unknown/release/erc20.wasm
+
+modules:
+  - name: map_contracts
+    kind: map
+    initialBlock: 2381560
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:zdexer.eth.erc20.v1.Contracts
+  
+  - name: map_transfers
+    kind: map
+    initialBlock: 2381560
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:zdexer.eth.erc20.v1.Transfers
+
+  - name: map_approvals
+    kind: map
+    initialBlock: 2381560
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:zdexer.eth.erc20.v1.Approvals
+
+  - name: store_balance
+    kind: store
+    initialBlock: 2381560
+    updatePolicy: add
+    valueType: bigint
+    inputs: 
+      - map: map_transfers
+
+  - name: map_contract_entities
+    kind: map
+    initialBlock: 2381560
+    inputs:
+      - map: map_contracts
+      - map: common_events:map_ownership_transfers
+    output:
+      type: proto:substreams.entity.v1.EntityChanges
+
+  - name: map_transfer_entities
+    kind: map
+    initialBlock: 2381560
+    inputs:
+      - map: map_transfers
+    output:
+      type: proto:substreams.entity.v1.EntityChanges
+
+  - name: map_approval_entities
+    kind: map
+    initialBlock: 2381560
+    inputs:
+      - map: map_approvals
+    output:
+      type: proto:substreams.entity.v1.EntityChanges
+
+  - name: map_balance_entities
+    kind: map
+    initialBlock: 2381560
+    inputs:
+      - store: store_balance
+        mode: deltas
+    output:
+      type: proto:substreams.entity.v1.EntityChanges
+
+  - name: graph_out
+    kind: map
+    initialBlock: 2381560
+    inputs:
+      - map: map_contract_entities
+      - map: map_transfer_entities
+      - map: map_approval_entities
+      - map: map_balance_entities
+    output:
+      type: proto:substreams.entity.v1.EntityChanges
+
+  - name: map_contracts_db
+    kind: map
+    initialBlock: 2381560
+    inputs:
+      - map: map_contracts
+      - map: common_events:map_ownership_transfers
+    output:
+      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
+
+  - name: map_transfers_db
+    kind: map
+    initialBlock: 2381560
+    inputs:
+      - map: map_transfers
+    output:
+      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
+
+  - name: map_approvals_db
+    kind: map
+    initialBlock: 2381560
+    inputs:
+      - map: map_approvals
+    output:
+      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
+
+  - name: map_balances_db
+    kind: map
+    initialBlock: 2381560
+    inputs:
+      - store: store_balance
+        mode: deltas
+    output:
+      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
+
+  - name: db_out
+    kind: map
+    initialBlock: 2381560
+    inputs:
+      - map: map_contracts_db
+      - map: map_transfers_db
+      - map: map_approvals_db
+      - map: map_balances_db
+    output:
+      type: proto:sf.substreams.sink.database.v1.DatabaseChanges

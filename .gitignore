@@ -1,0 +1,14 @@
+.vscode
+.idea
+.DS_Store
+/target
+*.spkg
+/sink-files
+/docker/devel
+/replay.log
+build/
+generated/
+graph-node/data/
+graph-node/.env
+graph-node/config/config.toml
+.env

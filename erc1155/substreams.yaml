@@ -1,0 +1,190 @@
+specVersion: v0.1.0
+package:
+  name: "substreams_erc1155"
+  version: v0.0.1
+
+imports:
+  database_change: https://github.com/streamingfast/substreams-database-change/releases/download/v0.1.0/substreams-database-change-v0.1.0.spkg
+  entity: https://github.com/streamingfast/substreams-entity-change/releases/download/v0.2.1/substreams-entity-change-v0.2.1.spkg
+  common_events: ../target/common_events-v0.0.1.spkg
+
+protobuf:
+  files:
+    - erc1155.proto
+  importPaths:
+    - ./proto
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ../target/wasm32-unknown-unknown/release/erc1155.wasm
+
+modules:
+  - name: map_collections
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:zdexer.eth.erc1155.v1.Collections 
+  
+  - name: map_transfers
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:zdexer.eth.erc1155.v1.Transfers
+
+  - name: map_approvals
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:zdexer.eth.erc1155.v1.Operators
+
+  - name: map_extract_mints
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - map: map_transfers
+    output:
+      type: proto:zdexer.eth.erc1155.v1.Mints
+
+  - name: map_extract_tokens
+    kind: map
+    initialBlock: 462663
+    valueType: proto:zdexer.eth.erc1155.v1.Token
+    inputs:
+      - map: map_transfers
+    output:
+      type: proto:zdexer.eth.erc1155.v1.Tokens
+  
+  - name: store_tokens
+    kind: store
+    initialBlock: 462663
+    updatePolicy: set
+    valueType: proto:zdexer.eth.erc1155.v1.Token
+    inputs: 
+      - map: map_extract_tokens
+
+  - name: store_balance
+    kind: store
+    initialBlock: 462663
+    updatePolicy: add
+    valueType: bigint
+    inputs: 
+      - map: map_transfers
+
+  - name: map_collection_entities
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - map: map_collections
+      - map: common_events:map_ownership_transfers
+    output:
+      type: proto:substreams.entity.v1.EntityChanges
+
+  - name: map_transfer_entities
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - map: map_transfers
+    output:
+      type: proto:substreams.entity.v1.EntityChanges
+
+  - name: map_token_entities
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - map: map_extract_tokens
+      - map: map_extract_mints
+    output:
+      type: proto:substreams.entity.v1.EntityChanges
+
+  - name: map_operator_entities
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - map: map_approvals
+    output:
+      type: proto:substreams.entity.v1.EntityChanges
+
+  - name: map_balance_entities
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - store: store_balance
+        mode: deltas
+    output:
+      type: proto:substreams.entity.v1.EntityChanges
+
+  - name: graph_out
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - map: map_collection_entities
+      - map: map_token_entities
+      - map: map_transfer_entities
+      - map: map_operator_entities
+      - map: map_balance_entities
+    output:
+      type: proto:substreams.entity.v1.EntityChanges
+
+  - name: map_collections_db
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - map: map_collections
+      - map: common_events:map_ownership_transfers
+    output:
+      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
+
+  - name: map_transfers_db
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - map: map_transfers
+    output:
+      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
+  
+  - name: map_tokens_db
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - store: store_tokens
+        mode: deltas
+      - map: map_extract_mints
+    output:
+      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
+
+  - name: map_operators_db
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - map: map_approvals
+    output:
+      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
+
+  - name: map_balances_db
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - store: store_balance
+        mode: deltas
+    output:
+      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
+
+  - name: db_out
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - map: map_collections_db
+      - map: map_tokens_db
+      - map: map_transfers_db
+      - map: map_operators_db
+      - map: map_balances_db
+    output:
+      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
+

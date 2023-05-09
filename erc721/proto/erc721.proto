@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package zdexer.eth.erc721.v1;
+
+message Collections{
+  repeated Collection items = 1;
+}
+
+message Collection {
+  string token_address = 1;
+  string name = 2;
+  string symbol = 3;
+  bool supports_metadata = 4;
+  string owner_address = 5;
+  string deploy_trx = 6;
+}
+
+message Tokens{
+  repeated Token items = 1;
+}
+
+message Token {
+  string token_id = 1;
+  string token_address = 2;
+  string owner_address = 3;
+  string metadata_uri = 4;
+  uint64 block_number = 5;
+}
+
+message Transfers {
+  repeated Transfer items = 1;
+}
+
+message Transfer {
+  string trx_hash = 1;
+  uint64 log_index = 2;
+  string from = 3;
+  string to = 4;
+  string token_id = 5;
+  uint64 log_ordinal = 6;
+  uint64 block_number = 7;
+  string token_address = 8;
+  string block_hash = 9;
+  uint64 timestamp = 10;
+  uint32 transaction_index = 11;
+  int32 transaction_type = 12;
+}
+
+message Mints {
+  repeated Mint items = 1;
+}
+
+message Mint {
+  string token_address = 1;
+  string token_id = 2;
+  string minter_address = 3;
+  uint64 mint_block = 4;
+  string min_trx = 5;
+}
+
+message Approvals {
+  repeated Approval items = 1;
+}
+
+message Approval {
+    string trx_hash = 1;
+    string token_address = 2;
+    string token_id = 3;
+    string operator_address = 4;
+    bool approved = 5;
+    string owner_address = 6;
+}

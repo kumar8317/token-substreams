@@ -1,0 +1,49 @@
+version: '2.1'
+
+networks:
+  monitor-net:
+    driver: bridge
+
+services:
+  index-node-0:
+    container_name: index-node-0
+    image: graphprotocol/graph-node:824fec4
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8020:8020"
+      - "8030:8030"
+      - "8040:8040"
+    depends_on:
+      - ipfs
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./config:/data/config
+    env_file:
+      - .env
+    restart: "unless-stopped"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "8020"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+    networks:
+      - monitor-net
+    
+  ipfs:
+    container_name: ipfs
+    image: ipfs/kubo:v0.14.0
+    ports:
+      - "5001:5001"
+      - "5002:8080"
+    volumes:
+      - ./data/ipfs:/data/ipfs
+      - ./data/ipfs-export:/export
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "5001"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+    networks:
+      - monitor-net

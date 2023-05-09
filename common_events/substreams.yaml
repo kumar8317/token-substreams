@@ -1,0 +1,24 @@
+specVersion: v0.1.0
+package:
+  name: "common_events"
+  version: v0.0.1
+
+protobuf:
+  files:
+    - events.proto
+  importPaths:
+    - ../common/proto
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ../target/wasm32-unknown-unknown/release/common_events.wasm
+
+modules:
+  - name: map_ownership_transfers
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:zdexer.eth.events.v1.OwnershipTransfers

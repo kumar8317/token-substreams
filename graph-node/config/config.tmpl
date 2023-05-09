@@ -1,0 +1,21 @@
+[general]
+
+[store]
+[store.primary]
+connection = "postgresql://${postgres_user}:${postgres_pass}@${postgres_host}:5432/${postgres_db}"
+weight = 1
+pool_size = 10
+
+[chains]
+ingestor = "index-node-0"
+[chains.${CHAIN_NAME}]
+shard = "primary"
+provider = [
+     { label = "bootstrap", details = { type = "web3", url = "$CHAIN_RPC", features = [ "archive" ] }},
+   { label = "firehose", details = { type = "firehose", url = "$SUBSTREAMS_ENDPOINT", token = "$SUBSTREAMS_API_TOKEN" }},
+    { label = "substreams", details = { type = "substreams", url = "$SUBSTREAMS_ENDPOINT", token = "$SUBSTREAMS_API_TOKEN" }},
+]
+
+[deployment]
+[[deployment.rule]]
+indexers = [ "default" ]

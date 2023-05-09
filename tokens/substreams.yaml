@@ -1,0 +1,39 @@
+specVersion: v0.1.0
+package:
+  name: "token_substreams"
+  version: v0.0.1
+
+imports:
+  database_change: https://github.com/streamingfast/substreams-database-change/releases/download/v0.1.0/substreams-database-change-v0.1.0.spkg
+  entity: https://github.com/streamingfast/substreams-entity-change/releases/download/v0.2.1/substreams-entity-change-v0.2.1.spkg
+  erc20: ../target/erc20-v0.0.1.spkg
+  erc721: ../target/erc721-v0.0.1.spkg
+  erc1155: ../target/erc1155-v0.0.1.spkg
+
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ../target/wasm32-unknown-unknown/release/token_substreams.wasm
+
+modules:
+  - name: graph_out
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - map: erc20:graph_out
+      - map: erc721:graph_out
+      - map: erc1155:graph_out
+    output:
+      type: proto:substreams.entity.v1.EntityChanges
+
+  - name: db_out
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - map: erc20:db_out
+      - map: erc721:db_out
+      - map: erc1155:db_out
+    output:
+      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
+
+
