@@ -115,8 +115,8 @@ create table if not exists erc20_contract (
     id TEXT NOT NULL PRIMARY KEY,
     "name" TEXT,
     symbol TEXT ,
-    decimals bigint,
-    owner_address TEXT
+    decimals bigint
+    -- owner_address TEXT
 );
 
 create table if not exists erc20_balance

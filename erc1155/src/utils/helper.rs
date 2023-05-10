@@ -1,35 +1,35 @@
 use crate::abi::erc1155::events::{TransferBatch as ERC1155TransferBatchEvent, TransferSingle as ERC1155TransferSingleEvent , ApprovalForAll as ERC1155ApprovalForAllEvent};
-use crate::pb::zdexer::eth::erc1155::v1::{Collection, Transfer, Operator};
-use crate::abi::erc1155::functions as erc1155_functions;
+use crate::pb::zdexer::eth::erc1155::v1::{Transfer, Operator};
+// use crate::abi::erc1155::functions as erc1155_functions;
 use substreams::scalar::BigInt;
-use substreams::{hex, log, Hex};
+use substreams::{log, Hex};
 use substreams_ethereum::pb::eth::v2 as eth;
 use substreams_ethereum::Event;
 use common::format_with_0x;
-pub const ERC1155_IFACE_ID: [u8; 4] = hex!("d9b67a26");
+// pub const ERC1155_IFACE_ID: [u8; 4] = hex!("d9b67a26");
 // pub const ERC1155_METADATA_URI_IFACE_ID: [u8; 4] = hex!("0e89341c");
 
-pub fn get_collections(
-    token_address: &String,
-    tx_hash: &str,
-    from: &str,
-) -> Option<Collection> {
-    let token_address_bytes = Hex::decode(token_address).unwrap();
+// pub fn get_collections(
+//     token_address: &String,
+//     tx_hash: &str,
+//     from: &str,
+// ) -> Option<Collection> {
+//     let token_address_bytes = Hex::decode(token_address).unwrap();
 
-    let eip1155_iface_resp = erc1155_functions::SupportsInterface {
-        interface_id: ERC1155_IFACE_ID,
-    }
-    .call(token_address_bytes);
+//     let eip1155_iface_resp = erc1155_functions::SupportsInterface {
+//         interface_id: ERC1155_IFACE_ID,
+//     }
+//     .call(token_address_bytes);
 
-    if eip1155_iface_resp == Some(true) {
-        return Some(Collection {
-            token_address: format_with_0x(token_address.to_string()),
-            owner_address: format_with_0x(from.to_string()),
-            deploy_trx: format_with_0x(tx_hash.to_string()),
-        });
-    }
-    None
-}
+//     if eip1155_iface_resp == Some(true) {
+//         return Some(Collection {
+//             token_address: format_with_0x(token_address.to_string()),    
+//             owner_address: format_with_0x(from.to_string()),
+//             deploy_trx: format_with_0x(tx_hash.to_string()),
+//         });
+//     }
+//     None
+// }
 
 pub fn get_transfers(blk: &eth::Block) -> impl Iterator<Item = Transfer> + '_ {
     blk.receipts().flat_map(|receipt| {

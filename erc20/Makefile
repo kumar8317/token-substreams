@@ -1,7 +1,7 @@
 ENDPOINT ?= mainnet.eth.streamingfast.io:443
 # ENDPOINT ?= goerli.eth.streamingfast.io:443
-startBlock ?= 2381560
-endBlock ?=  2381565
+startBlock ?= 512112
+endBlock ?=  512113
 
 .PHONY: build
 build:
@@ -17,7 +17,7 @@ package:build
 
 .PHONY: stream_map_contracts
 stream_map_contracts: build
-	substreams run -e $(ENDPOINT) substreams.yaml map_contracts --start-block $(startBlock) --stop-block $(endBlock)
+	substreams run -e $(ENDPOINT) substreams.yaml map_contracts -s 1248999  -t +1
 
 .PHONY: stream_map_transfers
 stream_map_transfers: build
@@ -25,23 +25,23 @@ stream_map_transfers: build
 
 .PHONY: stream_map_approvals
 stream_map_approvals: build
-	substreams run -e $(ENDPOINT) substreams.yaml map_approvals --start-block $(startBlock) --stop-block $(endBlock)
+	substreams run -e $(ENDPOINT) substreams.yaml map_approvals -s 512112 -t +1
 
 .PHONY: stream_map_contract_entities
 stream_map_contract_entities: build
-	substreams run -e $(ENDPOINT) substreams.yaml map_contract_entities --start-block $(startBlock) --stop-block $(endBlock)
+	substreams run -e $(ENDPOINT) substreams.yaml map_contract_entities -s 512112 -t +1
 
 .PHONY: stream_map_transfer_entities
 stream_map_transfer_entities: build
-	substreams run -e $(ENDPOINT) substreams.yaml map_transfer_entities --start-block $(startBlock) --stop-block $(endBlock)
+	substreams run -e $(ENDPOINT) substreams.yaml map_transfer_entities -s 512112 -t +1
 
 .PHONY: stream_graph_out
 stream_graph_out: build
-	substreams run -e $(ENDPOINT) substreams.yaml graph_out --start-block $(startBlock) --stop-block $(endBlock)
+	substreams run -e $(ENDPOINT) substreams.yaml graph_out -s 512112 -t +10
 
 .PHONY: stream_db_out
 stream_db_out: build
-	substreams run -e $(ENDPOINT) substreams.yaml db_out --start-block $(startBlock) --stop-block $(endBlock)
+	substreams run -e $(ENDPOINT) substreams.yaml db_out -s 512112 -t +10
 
 .PHONE: deploy_local
 deploy_local: package
@@ -51,5 +51,5 @@ deploy_local: package
 	graph deploy --node http://127.0.0.1:8020 --ipfs http://127.0.0.1:5001 --version-label v0.0.1 tokenData subgraph.yaml
 
 .PHONY: sink_db
-sink_db:build
-	substreams-sink-postgres run  "psql://graph-node:let-me-in@localhost:5432/graph-node?sslmode=disable"  $(ENDPOINT)  "substreams.yaml"  db_out
+sink_db:package
+	substreams-sink-postgres run  "psql://graph-node:let-me-in@localhost:5432/graph-node?sslmode=disable"  $(ENDPOINT)  ../target/erc20-v0.0.1.spkg  db_out

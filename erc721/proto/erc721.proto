@@ -2,6 +2,16 @@ syntax = "proto3";
 
 package zdexer.eth.erc721.v1;
 
+message Address{
+  string address = 1;
+}
+
+message CollectionOwner {
+  string owner_address = 1;
+  string deploy_trx = 2;
+  string token_address = 3;
+}
+
 message Collections{
   repeated Collection items = 1;
 }
@@ -69,4 +79,5 @@ message Approval {
     string operator_address = 4;
     bool approved = 5;
     string owner_address = 6;
+    uint64 log_index = 7;
 }

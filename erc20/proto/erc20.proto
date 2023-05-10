@@ -11,8 +11,6 @@ message Contract {
   string name = 2;
   string symbol = 3;
   uint64 decimals = 4;
-  string owner_address = 5;
-  string deploy_trx = 6;
 }
 
 message Transfers {
@@ -44,4 +42,9 @@ message Approval {
   string spender_address = 3;
   string quantity = 4;
   string owner_address = 5;
+  uint64 log_index = 6;
+}
+
+message Address{
+  string address = 1;
 }

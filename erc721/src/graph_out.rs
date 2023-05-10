@@ -7,7 +7,7 @@ use crate::{
         Approvals, Collections, Mints, Tokens, Transfers,
     },
     utils::{
-        keyer::{operator_key, transfer_key, token_store_key, approval_key},
+        keyer::{operator_key, transfer_key, token_store_key},
     },
 };
 use common::{ZERO_ADDRESS,format_with_0x};
@@ -116,10 +116,10 @@ pub fn mints_token_entity_changes(changes: &mut EntityChanges, mints: Mints) {
 
 pub fn approval_operator_entity_changes(changes: &mut EntityChanges, approvals: Approvals) {
     for approval in approvals.items {
+        let key = operator_key(&approval.trx_hash, approval.log_index);
         if approval.token_id.is_empty() {
             account_create_entity_change(changes, approval.owner_address.clone());
             account_create_entity_change(changes, approval.operator_address.clone());
-            let key = operator_key(&approval.operator_address, &approval.token_address, &approval.trx_hash, &approval.owner_address);
             changes
                 .push_change("ERC721Operator", &key, 1, Operation::Create)
                 .change("id", key)
@@ -130,7 +130,6 @@ pub fn approval_operator_entity_changes(changes: &mut EntityChanges, approvals: 
         }else{
             let token_key = token_store_key(&approval.token_address, &approval.token_id);
             account_create_entity_change(changes, approval.operator_address.clone());
-            let key = approval_key(&approval.operator_address, &approval.token_address,&approval.token_id, &approval.trx_hash,&approval.owner_address);
             changes
                 .push_change("ERC721Approval", &key, 1, Operation::Create)
                 .change("id", key)

@@ -1,7 +1,23 @@
 use substreams::store::{Deltas, DeltaBigInt};
 use substreams_database_change::pb::database::{table_change::Operation, DatabaseChanges};
-use common::{pb::zdexer::eth::events::v1::OwnershipTransfers, sanitize_string};
-use crate::{pb::zdexer::eth::erc20::v1::{Contracts, Transfers, Approvals}, utils::keyer::{transfer_key, operator_key}};
+use common::sanitize_string;
+use crate::{pb::zdexer::eth::erc20::v1::{Transfers, Approvals, Contracts}, utils::keyer::{transfer_key, operator_key}};
+
+// pub fn contract_db_changes(
+//     changes:&mut DatabaseChanges,
+//     contracts: Contracts
+// ) {
+//     for contract in contracts.items {
+//         //account_db_changes(changes, contract.owner_address.clone());
+//         let key = contract.token_address.clone();
+//         changes
+//             .push_change("erc20_contract", &key, 1, Operation::Create)
+//             .change("owner_address", (None,contract.owner_address))
+//             .change("name", (None,sanitize_string(&contract.name)))
+//             .change("symbol", (None,sanitize_string(&contract.symbol)))
+//             .change("decimals", (None,contract.decimals));
+//     }
+// }
 
 pub fn contract_db_changes(
     changes:&mut DatabaseChanges,
@@ -12,21 +28,20 @@ pub fn contract_db_changes(
         let key = contract.token_address.clone();
         changes
             .push_change("erc20_contract", &key, 1, Operation::Create)
-            .change("owner_address", (None,contract.owner_address))
             .change("name", (None,sanitize_string(&contract.name)))
             .change("symbol", (None,sanitize_string(&contract.symbol)))
             .change("decimals", (None,contract.decimals));
     }
 }
 
-pub fn contract_ownership_update_db_changes(changes: &mut DatabaseChanges, ownership_transfers: OwnershipTransfers) {
-    for ownership_transfer in ownership_transfers.items {
-        //account_db_changes(changes, ownership_transfer.new_owner.clone());
-        changes
-            .push_change("erc20_contract", &ownership_transfer.contract_address, 1, Operation::Update)
-            .change("owner_address", (ownership_transfer.previous_owner,ownership_transfer.new_owner));
-    }
-}
+// pub fn contract_ownership_update_db_changes(changes: &mut DatabaseChanges, ownership_transfers: OwnershipTransfers) {
+//     for ownership_transfer in ownership_transfers.items {
+//         //account_db_changes(changes, ownership_transfer.new_owner.clone());
+//         changes
+//             .push_change("erc20_contract", &ownership_transfer.contract_address, 1, Operation::Update)
+//             .change("owner_address", (ownership_transfer.previous_owner,ownership_transfer.new_owner));
+//     }
+// }
 
 // pub fn account_db_changes(
 //     changes:&mut DatabaseChanges,
@@ -69,7 +84,7 @@ pub fn approval_db_changes(
        // account_db_changes(changes, approval.owner_address.clone());
        // account_db_changes(changes, approval.spender_address.clone());
 
-        let key = operator_key(&approval.spender_address, &approval.token_address,&approval.trx_hash, &approval.owner_address);
+        let key = operator_key(&approval.trx_hash, approval.log_index);
 
         changes
             .push_change("erc20_approval", &key, 1, Operation::Create)

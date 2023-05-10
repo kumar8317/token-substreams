@@ -1,7 +1,7 @@
 use substreams::{scalar::BigInt, Hex, store::{Deltas, DeltaProto}};
 use substreams_database_change::pb::database::{table_change::Operation, DatabaseChanges};
 use common::{pb::zdexer::eth::events::v1::OwnershipTransfers, sanitize_string};
-use crate::{pb::zdexer::eth::erc721::v1::{Collections, Transfers, Approvals, Mints, Token}, utils::{keyer::{transfer_key, operator_key, token_store_key, approval_key}}};
+use crate::{pb::zdexer::eth::erc721::v1::{Collections, Transfers, Approvals, Mints, Token}, utils::{keyer::{transfer_key, operator_key, token_store_key}}};
 use common::{ZERO_ADDRESS,format_with_0x};
 
 pub fn collection_db_changes(
@@ -152,10 +152,11 @@ pub fn approval_operator_db_changes(
     approvals: Approvals
 ) {
     for approval in approvals.items {
+        let key = operator_key(&approval.trx_hash, approval.log_index);
         if approval.token_id.is_empty() {
            // account_db_changes(changes, approval.owner_address.clone());
           //  account_db_changes(changes, approval.operator_address.clone());
-            let key = operator_key(&approval.operator_address, &approval.token_address, &approval.trx_hash, &approval.owner_address);
+            
             changes
                 .push_change("erc721_operator", &key, 1, Operation::Create)
                 .change("collection", (None,approval.token_address))
@@ -165,7 +166,6 @@ pub fn approval_operator_db_changes(
         }else{
             let token_key = token_store_key(&approval.token_address, &approval.token_id);
             //account_db_changes(changes, approval.operator_address.clone());
-            let key = approval_key(&approval.operator_address, &approval.token_address,&approval.token_id,&approval.trx_hash, &approval.owner_address);
             changes
                 .push_change("erc721_approval", &key, 1, Operation::Create)
                 .change("owner", (None,approval.owner_address))

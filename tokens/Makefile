@@ -24,5 +24,5 @@ stream_db_out: build
 	substreams run -e $(ENDPOINT) substreams.yaml db_out -s 462680 -t +10
 
 .PHONY: sink_db
-sink_db:
-	substreams-sink-postgres run  "psql://graph-node:let-me-in@localhost:5432/graph-node?sslmode=disable"  $(ENDPOINT)  ../token_substreams.spkg  db_out
+sink_db:package
+	substreams-sink-postgres run  "psql://graph-node:let-me-in@localhost:5432/graph-node?sslmode=disable"  $(ENDPOINT)  ../token_substreams.spkg  db_out 

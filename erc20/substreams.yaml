@@ -6,7 +6,7 @@ package:
 imports:
   database_change: https://github.com/streamingfast/substreams-database-change/releases/download/v0.1.0/substreams-database-change-v0.1.0.spkg
   entity: https://github.com/streamingfast/substreams-entity-change/releases/download/v0.2.1/substreams-entity-change-v0.2.1.spkg
-  common_events: ../target/common_events-v0.0.1.spkg
+  # common_events: ../target/common_events-v0.0.1.spkg
 
 protobuf:
   files:
@@ -20,25 +20,42 @@ binaries:
     file: ../target/wasm32-unknown-unknown/release/erc20.wasm
 
 modules:
-  - name: map_contracts
-    kind: map
-    initialBlock: 2381560
-    inputs:
-      - source: sf.ethereum.type.v2.Block
-    output:
-      type: proto:zdexer.eth.erc20.v1.Contracts
+  # - name: map_contracts
+  #   kind: map
+  #   initialBlock: 462663
+  #   inputs:
+  #     - source: sf.ethereum.type.v2.Block
+  #   output:
+  #     type: proto:zdexer.eth.erc20.v1.Contracts
   
   - name: map_transfers
     kind: map
-    initialBlock: 2381560
+    initialBlock: 462663
     inputs:
       - source: sf.ethereum.type.v2.Block
     output:
       type: proto:zdexer.eth.erc20.v1.Transfers
 
+  - name: store_address
+    kind: store
+    initialBlock: 462663
+    updatePolicy: set_if_not_exists
+    valueType: proto:zdexer.eth.erc20.v1.Address
+    inputs: 
+      - map: map_transfers
+
+  - name: map_contracts
+    kind: map
+    initialBlock: 462663
+    inputs: 
+      - store: store_address
+        mode: deltas
+    output:
+      type: proto:zdexer.eth.erc20.v1.Contracts
+
   - name: map_approvals
     kind: map
-    initialBlock: 2381560
+    initialBlock: 462663
     inputs:
       - source: sf.ethereum.type.v2.Block
     output:
@@ -46,7 +63,7 @@ modules:
 
   - name: store_balance
     kind: store
-    initialBlock: 2381560
+    initialBlock: 462663
     updatePolicy: add
     valueType: bigint
     inputs: 
@@ -54,16 +71,16 @@ modules:
 
   - name: map_contract_entities
     kind: map
-    initialBlock: 2381560
+    initialBlock: 462663
     inputs:
       - map: map_contracts
-      - map: common_events:map_ownership_transfers
+      #- map: common_events:map_ownership_transfers
     output:
       type: proto:substreams.entity.v1.EntityChanges
 
   - name: map_transfer_entities
     kind: map
-    initialBlock: 2381560
+    initialBlock: 462663
     inputs:
       - map: map_transfers
     output:
@@ -71,7 +88,7 @@ modules:
 
   - name: map_approval_entities
     kind: map
-    initialBlock: 2381560
+    initialBlock: 462663
     inputs:
       - map: map_approvals
     output:
@@ -79,7 +96,7 @@ modules:
 
   - name: map_balance_entities
     kind: map
-    initialBlock: 2381560
+    initialBlock: 462663
     inputs:
       - store: store_balance
         mode: deltas
@@ -88,7 +105,7 @@ modules:
 
   - name: graph_out
     kind: map
-    initialBlock: 2381560
+    initialBlock: 462663
     inputs:
       - map: map_contract_entities
       - map: map_transfer_entities
@@ -99,16 +116,16 @@ modules:
 
   - name: map_contracts_db
     kind: map
-    initialBlock: 2381560
+    initialBlock: 462663
     inputs:
       - map: map_contracts
-      - map: common_events:map_ownership_transfers
+      # - map: common_events:map_ownership_transfers
     output:
       type: proto:sf.substreams.sink.database.v1.DatabaseChanges
 
   - name: map_transfers_db
     kind: map
-    initialBlock: 2381560
+    initialBlock: 462663
     inputs:
       - map: map_transfers
     output:
@@ -116,7 +133,7 @@ modules:
 
   - name: map_approvals_db
     kind: map
-    initialBlock: 2381560
+    initialBlock: 462663
     inputs:
       - map: map_approvals
     output:
@@ -124,7 +141,7 @@ modules:
 
   - name: map_balances_db
     kind: map
-    initialBlock: 2381560
+    initialBlock: 462663
     inputs:
       - store: store_balance
         mode: deltas
@@ -133,7 +150,7 @@ modules:
 
   - name: db_out
     kind: map
-    initialBlock: 2381560
+    initialBlock: 462663
     inputs:
       - map: map_contracts_db
       - map: map_transfers_db

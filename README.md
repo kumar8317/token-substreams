@@ -65,8 +65,9 @@ docker run --env-file .env -p 9102:9102 --name token-sink-container token-sink
 ### Enviroment Variables
 Create a file named .env in the root directory with the following content:
 
-- `POSTGRES_DSN`: psql://graph-node:let-me-in@172.17.0.1:5432/graph-node?sslmode=disable.
-- `FIREHOSE_ENDPOINT`: firehose.eth.zeeve.net:443
+- `POSTGRES_DSN`: Postgres data source string. ex- psql://graph-node:let-me-in@172.17.0.1:5432/graph-node?sslmode=disable
+- `FIREHOSE_ENDPOINT`: Firehose gRPC endpoint
+- `SUBSTREAMS_API_TOKEN`: the API token for Substreams endpoint 
 
 ## Substreams Module DAG
 ### ERC20

@@ -9,61 +9,83 @@ mod utils;
 
 use std::str::FromStr;
 
-use common::pb::zdexer::eth::events::v1::OwnershipTransfers;
 use common::remove_0x;
-use pb::zdexer::eth::erc20::v1::{Approvals, Contracts, Transfers};
-use substreams::store::{DeltaBigInt, Deltas, StoreAdd, StoreAddBigInt, StoreNew};
-use substreams::{errors::Error, hex, log, scalar::BigInt, Hex};
+use pb::zdexer::eth::erc20::v1::{Approvals, Contracts, Transfers, Address};
+use substreams::store::{DeltaBigInt, Deltas, StoreAdd, StoreAddBigInt, StoreNew, StoreSetIfNotExistsProto, StoreSetIfNotExists, DeltaProto};
+use substreams::{errors::Error, log, scalar::BigInt, Hex};
 use substreams_database_change::pb::database::DatabaseChanges;
 use substreams_entity_change::pb::entity::EntityChanges;
 use substreams_ethereum::pb::eth::v2 as eth;
 use substreams_ethereum::NULL_ADDRESS;
-use utils::helper::get_approvals;
-use utils::helper::{self, get_transfers};
+use utils::helper::{get_approvals, get_contracts};
+use utils::helper::get_transfers;
 use utils::keyer;
 
-const INITIALIZE_METHOD_HASH: [u8; 4] = hex!("1459457a");
+// const INITIALIZE_METHOD_HASH: [u8; 4] = hex!("1459457a");
 
-#[substreams::handlers::map]
-fn map_contracts(blk: eth::Block) -> Result<Contracts, Error> {
-    let mut contracts = Contracts { items: vec![] };
+// #[substreams::handlers::map]
+// fn map_contracts(blk: eth::Block) -> Result<Contracts, Error> {
+//     let mut contracts = Contracts { items: vec![] };
 
-    for call_view in blk.calls() {
-        let tx_hash = Hex(&call_view.transaction.hash).to_string();
-        let from = Hex(&call_view.transaction.from).to_string();
+//     for call_view in blk.calls() {
+//         let tx_hash = Hex(&call_view.transaction.hash).to_string();
+//         let from = Hex(&call_view.transaction.from).to_string();
 
-        let call = call_view.call;
-        if call.call_type == eth::CallType::Create as i32 {
-            let call_input_len = call.input.len();
-            if call.call_type == eth::CallType::Call as i32
-                && (call_input_len < 4 || call.input[0..4] != INITIALIZE_METHOD_HASH)
-            {
-                // this will check if a proxy contract has been called to create a contract.
-                // if that is the case the Proxy contract will call the initialize function on the contract
-                // this is part of the OpenZeppelin Proxy contract standard
-                //log::debug!("{:?}if false--- ", INITIALIZE_METHOD_HASH);
-                continue;
-            }
+//         let call = call_view.call;
+//         if call.call_type == eth::CallType::Create as i32 {
+//             let call_input_len = call.input.len();
+//             if call.call_type == eth::CallType::Call as i32
+//                 && (call_input_len < 4 || call.input[0..4] != INITIALIZE_METHOD_HASH)
+//             {
+//                 // this will check if a proxy contract has been called to create a contract.
+//                 // if that is the case the Proxy contract will call the initialize function on the contract
+//                 // this is part of the OpenZeppelin Proxy contract standard
+//                 //log::debug!("{:?}if false--- ", INITIALIZE_METHOD_HASH);
+//                 continue;
+//             }
 
-            let address = Hex(&call.address).to_string();
+//             let address = Hex(&call.address).to_string();
 
-            log::info!("address {}", address);
+//             log::info!("address {}", address);
 
-            let contract = helper::get_contracts(&address, &tx_hash, &from);
-            if contract.is_some() {
-                contracts.items.push(contract.unwrap());
-            }
-        }
-    }
+//             let contract = helper::get_contracts(&address, &tx_hash, &from);
+//             if contract.is_some() {
+//                 contracts.items.push(contract.unwrap());
+//             }
+//         }
+//     }
 
-    Ok(contracts)
-}
+//     Ok(contracts)
+// }
 
 #[substreams::handlers::map]
 fn map_transfers(blk: eth::Block) -> Result<Transfers, Error> {
     Ok(Transfers {
         items: get_transfers(&blk).collect(),
     })
+}
+
+#[substreams::handlers::store]
+fn store_address(transfers: Transfers, output: StoreSetIfNotExistsProto<Address>) {
+    for transfer in transfers.items {
+        output.set_if_not_exists(
+            transfer.log_ordinal,
+            &transfer.token_address.clone(),
+            &Address { address: transfer.token_address.clone() },
+        );
+    }
+}
+
+#[substreams::handlers::map]
+fn map_contracts(deltas: Deltas<DeltaProto<Address>>) -> Result<Contracts, Error> {
+    
+    let mut array_addresses = vec![];
+    for delta in deltas.deltas {
+        let token_address = delta.new_value.address;
+        array_addresses.push(remove_0x(&token_address));
+    }
+    let contracts = get_contracts(array_addresses);
+    Ok(contracts)
 }
 
 #[substreams::handlers::map]
@@ -98,12 +120,12 @@ fn store_balance(transfers: Transfers, output: StoreAddBigInt) {
 #[substreams::handlers::map]
 fn map_contract_entities(
     contracts: Contracts,
-    ownership_transfers: OwnershipTransfers,
+    // ownership_transfers: OwnershipTransfers,
 ) -> Result<EntityChanges, Error> {
     let mut entity_changes: EntityChanges = Default::default();
 
     graph::contract_entity_changes(&mut entity_changes, contracts);
-    graph::contract_ownership_update_entity_change(&mut entity_changes, ownership_transfers);
+    // graph::contract_ownership_update_entity_change(&mut entity_changes, ownership_transfers);
     Ok(entity_changes)
 }
 
@@ -151,12 +173,12 @@ fn graph_out(
 #[substreams::handlers::map]
 fn map_contracts_db(
     contracts: Contracts,
-    ownership_transfers: OwnershipTransfers,
+    //ownership_transfers: OwnershipTransfers,
 ) -> Result<DatabaseChanges, Error> {
     let mut database_changes: DatabaseChanges = Default::default();
 
     db::contract_db_changes(&mut database_changes, contracts);
-    db::contract_ownership_update_db_changes(&mut database_changes, ownership_transfers);
+    //db::contract_ownership_update_db_changes(&mut database_changes, ownership_transfers);
     Ok(database_changes)
 }
 

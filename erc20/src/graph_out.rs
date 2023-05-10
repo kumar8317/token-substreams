@@ -2,7 +2,6 @@ use std::str::FromStr;
 
 use substreams::{scalar::BigInt, store::{Deltas, DeltaBigInt}};
 use substreams_entity_change::pb::entity::{entity_change::Operation, EntityChanges};
-use common::pb::zdexer::eth::events::v1::OwnershipTransfers;
 use crate::{
     pb::zdexer::eth::erc20::v1::{Contracts, Approvals, Transfers},
     utils::{
@@ -12,26 +11,24 @@ use crate::{
 
 pub fn contract_entity_changes(changes: &mut EntityChanges, contracts: Contracts) {
     for contract in contracts.items {
-        account_create_entity_changes(changes, contract.owner_address.clone());
         let key = contract.token_address.clone();
         changes
             .push_change("ERC20Contract", &key, 1, Operation::Create)
             .change("id", contract.token_address)
-            .change("owner_address", contract.owner_address)
             .change("name", contract.name)
             .change("symbol", contract.symbol)
             .change("decimals", contract.decimals);
     }
 }
 
-pub fn contract_ownership_update_entity_change(changes: &mut EntityChanges, ownership_transfers: OwnershipTransfers) {
-    for ownership_transfer in ownership_transfers.items {
-        account_create_entity_changes(changes, ownership_transfer.new_owner.clone());
-        changes
-            .push_change("ERC20Contract", &ownership_transfer.contract_address, 1, Operation::Update)
-            .change("owner_address", ownership_transfer.new_owner);
-    }
-}
+// pub fn contract_ownership_update_entity_change(changes: &mut EntityChanges, ownership_transfers: OwnershipTransfers) {
+//     for ownership_transfer in ownership_transfers.items {
+//         account_create_entity_changes(changes, ownership_transfer.new_owner.clone());
+//         changes
+//             .push_change("ERC20Contract", &ownership_transfer.contract_address, 1, Operation::Update)
+//             .change("owner_address", ownership_transfer.new_owner);
+//     }
+// }
 
 pub fn account_create_entity_changes(changes: &mut EntityChanges, account_address: String) {
     changes
@@ -71,7 +68,7 @@ pub fn approval_entity_changes(changes: &mut EntityChanges, approvals: Approvals
     for approval in approvals.items {
         account_create_entity_changes(changes, approval.owner_address.clone());
         account_create_entity_changes(changes, approval.spender_address.clone());
-        let key = operator_key(&approval.spender_address, &approval.token_address, &approval.trx_hash, &approval.owner_address);
+        let key = operator_key(&approval.trx_hash, approval.log_index);
         changes
             .push_change("ERC20Approval", &key, 1, Operation::Create)
             .change("id", key)

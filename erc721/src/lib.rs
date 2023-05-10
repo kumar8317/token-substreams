@@ -13,26 +13,25 @@ use std::str::FromStr;
 
 use pb::zdexer::eth::erc721::v1::{
     Approvals, Collections, Mint, Mints, Token, Tokens,
-    Transfers, Transfer,
+    Transfers, Transfer, CollectionOwner, Address
 };
 use rpc::RpcTokenURI;
-use substreams::store::{StoreSetProto, StoreNew, StoreSet, Deltas, DeltaProto};
-use substreams::{errors::Error, hex, log, scalar::BigInt, Hex};
+use substreams::store::{StoreSetProto, StoreNew, StoreSet, Deltas, DeltaProto, StoreGetProto, StoreSetIfNotExistsProto, StoreGet, StoreSetIfNotExists};
+use substreams::{errors::Error, hex, scalar::BigInt, Hex};
 use substreams_database_change::pb::database::DatabaseChanges;
 use substreams_entity_change::pb::entity::EntityChanges;
 use substreams_ethereum::NULL_ADDRESS;
 use substreams_ethereum::{pb::eth::v2 as eth, rpc::RpcBatch};
 use utils::helper::get_approvals;
-use common::remove_0x;
+use common::{remove_0x, format_with_0x};
 use utils::helper::{self, get_transfers};
 use common::pb::zdexer::eth::events::v1::OwnershipTransfers;
 use utils::keyer;
 
 const INITIALIZE_METHOD_HASH: [u8; 4] = hex!("1459457a");
 
-#[substreams::handlers::map]
-fn map_collections(blk: eth::Block) -> Result<Collections, Error> {
-    let mut erc721_collections = Collections { items: vec![] };
+#[substreams::handlers::store]
+fn store_collections_owners(blk: eth::Block, output: StoreSetIfNotExistsProto<CollectionOwner>) {
 
     for call_view in blk.calls() {
         let tx_hash = Hex(&call_view.transaction.hash).to_string();
@@ -53,23 +52,84 @@ fn map_collections(blk: eth::Block) -> Result<Collections, Error> {
 
             let address = Hex(&call.address).to_string();
 
-            log::info!("address {}", address);
-
-            let collection = helper::get_collections(&address, &tx_hash, &from);
-            if collection.is_some() {
-                erc721_collections.items.push(collection.unwrap());
-            }
+            output.set_if_not_exists(
+                1,
+                &format_with_0x(address.clone()),
+                &CollectionOwner {
+                    token_address: format_with_0x(address),
+                    owner_address: format_with_0x(from),
+                    deploy_trx: format_with_0x(tx_hash),
+                }
+            );
         }
     }
 
-    Ok(erc721_collections)
+
 }
+
+// #[substreams::handlers::map]
+// fn map_collections(blk: eth::Block) -> Result<Collections, Error> {
+//     let mut erc721_collections = Collections { items: vec![] };
+
+//     for call_view in blk.calls() {
+//         let tx_hash = Hex(&call_view.transaction.hash).to_string();
+//         let from = Hex(&call_view.transaction.from).to_string();
+
+//         let call = call_view.call;
+//         if call.call_type == eth::CallType::Create as i32 {
+//             let call_input_len = call.input.len();
+//             if call.call_type == eth::CallType::Call as i32
+//                 && (call_input_len < 4 || call.input[0..4] != INITIALIZE_METHOD_HASH)
+//             {
+//                 // this will check if a proxy contract has been called to create a contract.
+//                 // if that is the case the Proxy contract will call the initialize function on the contract
+//                 // this is part of the OpenZeppelin Proxy contract standard
+//                 //log::debug!("{:?}if false--- ", INITIALIZE_METHOD_HASH);
+//                 continue;
+//             }
+
+//             let address = Hex(&call.address).to_string();
+
+//             log::info!("address {}", address);
+
+//             let collection = helper::get_collections(&address, &tx_hash, &from);
+//             if collection.is_some() {
+//                 erc721_collections.items.push(collection.unwrap());
+//             }
+//         }
+//     }
+
+//     Ok(erc721_collections)
+// }
 
 #[substreams::handlers::map]
 fn map_transfers(blk: eth::Block) -> Result<Transfers, Error> {
     Ok(Transfers {
         items: get_transfers(&blk).collect(),
     })
+}
+
+#[substreams::handlers::store]
+fn store_address(transfers: Transfers, output: StoreSetIfNotExistsProto<Address>) {
+    for transfer in transfers.items {
+        output.set_if_not_exists(
+            transfer.log_ordinal,
+            &transfer.token_address.clone(),
+            &Address{ address: transfer.token_address.clone() },
+        );
+    }
+}
+
+#[substreams::handlers::map]
+fn map_collections(deltas: Deltas<DeltaProto<Address>>, collection_owner_store: StoreGetProto<CollectionOwner>) -> Result<Collections, Error> {
+    
+    let mut array_addresses = vec![];
+    for delta in deltas.deltas {
+        let token_address = delta.new_value.address;
+        array_addresses.push(remove_0x(&token_address));
+    }
+    let collections = helper::get_collections(array_addresses,collection_owner_store);
+    Ok(collections)
 }
 
 #[substreams::handlers::map]

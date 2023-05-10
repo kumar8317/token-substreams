@@ -1,7 +1,7 @@
 ENDPOINT ?= mainnet.eth.streamingfast.io:443
 # ENDPOINT ?= goerli.eth.streamingfast.io:443
-startBlock ?= 13300950
-endBlock ?=  13300951
+startBlock ?= 847527
+endBlock ?=  937822
 
 .PHONY: build
 build:
@@ -17,7 +17,7 @@ package:build
 
 .PHONY: stream_map_collections
 stream_map_collections: build
-	substreams run -e $(ENDPOINT) substreams.yaml map_collections -s 12287507 -t +1
+	substreams run -e $(ENDPOINT) substreams.yaml map_collections --start-block ${startBlock} --stop-block ${endBlock}
 
 .PHONY: stream_map_transfers
 stream_map_transfers: build
@@ -63,5 +63,5 @@ deploy_local:
 	graph deploy --node http://127.0.0.1:8020 --ipfs http://127.0.0.1:5001 --version-label v0.0.1 nft subgraph.yaml
 
 .PHONY: sink_db
-sink_db:build
-	substreams-sink-postgres run  "psql://graph-node:let-me-in@localhost:5432/graph-node?sslmode=disable"  $(ENDPOINT)  "substreams.yaml"  db_out
+sink_db:package
+	substreams-sink-postgres run  "psql://graph-node:let-me-in@localhost:5432/graph-node?sslmode=disable"  $(ENDPOINT)  ../target/erc721-v0.0.1.spkg  db_out
