@@ -71,7 +71,35 @@ Create a file named .env in the root directory with the following content:
 
 ## Substreams Module DAG
 ### ERC20
-![erc20-graph](images/erc20.png)
+
+```mermaid
+graph TD;
+graph TD;
+  map_transfers[map: map_transfers];
+  sf.ethereum.type.v2.Block[source: sf.ethereum.type.v2.Block] --> map_transfers;
+  store_address[store: store_address];
+  map_transfers --> store_address;
+  map_contracts[map: map_contracts];
+  store_address -- deltas --> map_contracts;
+  map_approvals[map: map_approvals];
+  sf.ethereum.type.v2.Block[source: sf.ethereum.type.v2.Block] --> map_approvals;
+  store_balance[store: store_balance];
+  map_transfers --> store_balance;
+  map_contracts_db[map: map_contracts_db];
+  map_contracts --> map_contracts_db;
+  map_transfers_db[map: map_transfers_db];
+  map_transfers --> map_transfers_db;
+  map_approvals_db[map: map_approvals_db];
+  map_approvals --> map_approvals_db;
+  map_balances_db[map: map_balances_db];
+  store_balance -- deltas --> map_balances_db;
+  db_out[map: db_out];
+  map_contracts_db --> db_out;
+  map_transfers_db --> db_out;
+  map_approvals_db --> db_out;
+  map_balances_db --> db_out;
+
+```
 
 ### ERC721
 ![erc721-graph](images/erc721.png)
