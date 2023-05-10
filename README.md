@@ -74,7 +74,6 @@ Create a file named .env in the root directory with the following content:
 
 ```mermaid
 graph TD;
-graph TD;
   map_transfers[map: map_transfers];
   sf.ethereum.type.v2.Block[source: sf.ethereum.type.v2.Block] --> map_transfers;
   store_address[store: store_address];
