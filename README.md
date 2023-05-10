@@ -101,7 +101,86 @@ graph TD;
 ```
 
 ### ERC721
-![erc721-graph](images/erc721.png)
+```mermaid
+graph TD;
+  store_collections_owners[store: store_collections_owners];
+  sf.ethereum.type.v2.Block[source: sf.ethereum.type.v2.Block] --> store_collections_owners;
+  map_transfers[map: map_transfers];
+  sf.ethereum.type.v2.Block[source: sf.ethereum.type.v2.Block] --> map_transfers;
+  store_address[store: store_address];
+  map_transfers --> store_address;
+  map_collections[map: map_collections];
+  store_address -- deltas --> map_collections;
+  store_collections_owners --> map_collections;
+  map_approvals[map: map_approvals];
+  sf.ethereum.type.v2.Block[source: sf.ethereum.type.v2.Block] --> map_approvals;
+  map_extract_mints[map: map_extract_mints];
+  map_transfers --> map_extract_mints;
+  map_extract_tokens[map: map_extract_tokens];
+  map_transfers --> map_extract_tokens;
+  store_tokens[store: store_tokens];
+  map_extract_tokens --> store_tokens;
+  map_collections_db[map: map_collections_db];
+  map_collections --> map_collections_db;
+  common_events:map_ownership_transfers --> map_collections_db;
+  map_transfers_db[map: map_transfers_db];
+  map_transfers --> map_transfers_db;
+  map_tokens_db[map: map_tokens_db];
+  store_tokens -- deltas --> map_tokens_db;
+  map_extract_mints --> map_tokens_db;
+  map_operators_db[map: map_operators_db];
+  map_approvals --> map_operators_db;
+  db_out[map: db_out];
+  map_collections_db --> db_out;
+  map_tokens_db --> db_out;
+  map_transfers_db --> db_out;
+  map_operators_db --> db_out;
+  common_events:map_ownership_transfers[map: common_events:map_ownership_transfers];
+  sf.ethereum.type.v2.Block[source: sf.ethereum.type.v2.Block] --> common_events:map_ownership_transfers;
+
+```
 
 ### ERC1155
-![erc1155-graph](images/erc1155.png)
+```mermaid
+graph TD;
+  store_collections_owners[store: store_collections_owners];
+  sf.ethereum.type.v2.Block[source: sf.ethereum.type.v2.Block] --> store_collections_owners;
+  map_transfers[map: map_transfers];
+  sf.ethereum.type.v2.Block[source: sf.ethereum.type.v2.Block] --> map_transfers;
+  store_address[store: store_address];
+  map_transfers --> store_address;
+  map_collections[map: map_collections];
+  store_address -- deltas --> map_collections;
+  store_collections_owners --> map_collections;
+  map_approvals[map: map_approvals];
+  sf.ethereum.type.v2.Block[source: sf.ethereum.type.v2.Block] --> map_approvals;
+  map_extract_mints[map: map_extract_mints];
+  map_transfers --> map_extract_mints;
+  map_extract_tokens[map: map_extract_tokens];
+  map_transfers --> map_extract_tokens;
+  store_tokens[store: store_tokens];
+  map_extract_tokens --> store_tokens;
+  store_balance[store: store_balance];
+  map_transfers --> store_balance;
+  map_collections_db[map: map_collections_db];
+  map_collections --> map_collections_db;
+  common_events:map_ownership_transfers --> map_collections_db;
+  map_transfers_db[map: map_transfers_db];
+  map_transfers --> map_transfers_db;
+  map_tokens_db[map: map_tokens_db];
+  store_tokens -- deltas --> map_tokens_db;
+  map_extract_mints --> map_tokens_db;
+  map_operators_db[map: map_operators_db];
+  map_approvals --> map_operators_db;
+  map_balances_db[map: map_balances_db];
+  store_balance -- deltas --> map_balances_db;
+  db_out[map: db_out];
+  map_collections_db --> db_out;
+  map_tokens_db --> db_out;
+  map_transfers_db --> db_out;
+  map_operators_db --> db_out;
+  map_balances_db --> db_out;
+  common_events:map_ownership_transfers[map: common_events:map_ownership_transfers];
+  sf.ethereum.type.v2.Block[source: sf.ethereum.type.v2.Block] --> common_events:map_ownership_transfers;
+
+```
