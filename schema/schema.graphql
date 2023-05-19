@@ -53,8 +53,8 @@ type ERC721Transfer @entity {
   block_number: BigInt!
   block_hash: String
   timestamp: BigInt
-  transaction_index: Int
-  transacction_type: Int
+  transaction_index: BigInt
+  transaction_type: Int
 }
 
 type ERC721Operator @entity {
@@ -107,8 +107,8 @@ type ERC1155Transfer @entity {
   block_number: BigInt!
   block_hash: String
   timestamp: BigInt
-  transaction_index: Int
-  transacction_type: Int
+  transaction_index: BigInt
+  transaction_type: Int
 }
 
 type ERC1155Balance @entity {
@@ -163,6 +163,6 @@ type ERC20Transfer @entity {
   block_number: BigInt!
   block_hash: String
   timestamp: BigInt
-  transaction_index: Int
-  transacction_type: Int
+  transaction_index: BigInt
+  transaction_type: Int
 }

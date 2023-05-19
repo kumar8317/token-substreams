@@ -57,7 +57,9 @@ pub fn transfer_db_changes(
             .change("block_hash", (None,transfer.block_hash))
             .change("timestamp", (None,transfer.timestamp))
             .change("transaction_index", (None,transfer.transaction_index))
-            .change("transaction_type", (None,transfer.transaction_type));
+            .change("transaction_type", (None,transfer.transaction_type))
+            .change("value", (None,transfer.value))
+            .change("operator", (None,transfer.operator));
     }
 }
 

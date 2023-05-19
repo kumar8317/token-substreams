@@ -1,7 +1,7 @@
 ENDPOINT ?= mainnet.eth.streamingfast.io:443
 # ENDPOINT ?= firehose.eth.zeeve.net:443
-startBlock ?= 462680
-endBlock ?=  462681
+startBlock ?= 462663
+endBlock ?=  17277277
 
 .PHONY: build
 build:
@@ -21,7 +21,7 @@ stream_graph_out: build
 
 .PHONY: stream_db_out
 stream_db_out: build
-	substreams run -e $(ENDPOINT) substreams.yaml db_out -s 462680 -t +10
+	substreams run -e $(ENDPOINT) substreams.yaml db_out --start-block $(startBlock) --stop-block $(endBlock)
 
 .PHONY: sink_db
 sink_db:package

@@ -101,14 +101,14 @@ fn store_balance(transfers: Transfers, output: StoreAddBigInt) {
     for transfer in transfers.items {
         output.add(
             transfer.log_ordinal,
-            keyer::balance_key(&transfer.to, &transfer.token_address),
+            keyer::balance_key(&transfer.to, &transfer.token_address,transfer.block_number),
             &BigInt::from_str((transfer.quantity).as_str()).unwrap(),
         );
 
         if Hex::decode(remove_0x(&transfer.from.clone())).unwrap() != NULL_ADDRESS {
             output.add(
                 transfer.log_ordinal,
-                keyer::balance_key(&transfer.from, &transfer.token_address),
+                keyer::balance_key(&transfer.from, &transfer.token_address,transfer.block_number),
                 &BigInt::from_str((transfer.quantity).as_str())
                     .unwrap()
                     .neg(),

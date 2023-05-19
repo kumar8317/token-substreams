@@ -1,6 +1,6 @@
 # Token Substreams
 
-Token-subgraph powered by substreams to index ERC20, ERC721 and ERC1155 tokens.
+Token-substreams project to index all ERC20, ERC721 and ERC1155 tokens on ethereum mainnet.
 
 ## Quick-Start
 

@@ -9,6 +9,7 @@ pub fn operator_key(trx_hash: &String, log_index: u64) -> String {
 pub fn balance_key(
     account_address: &String,
     contract_address: &String,
+    block_number: u64
 ) -> String {
-    format!("{}/{}", account_address, contract_address, )
+    format!("{}/{}/{}", account_address, contract_address,block_number)
 }

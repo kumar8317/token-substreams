@@ -6,6 +6,7 @@ use substreams::{log, Hex};
 use substreams_ethereum::pb::eth::v2 as eth;
 use substreams_ethereum::Event;
 use common::format_with_0x;
+use num_bigint::{BigInt as nBigInt, Sign};
 // pub const ERC1155_IFACE_ID: [u8; 4] = hex!("d9b67a26");
 // pub const ERC1155_METADATA_URI_IFACE_ID: [u8; 4] = hex!("0e89341c");
 
@@ -32,10 +33,16 @@ use common::format_with_0x;
 // }
 
 pub fn get_transfers(blk: &eth::Block) -> impl Iterator<Item = Transfer> + '_ {
-    blk.receipts().flat_map(|receipt| {
+    blk.receipts().flat_map(move |receipt| {
         let hash = &receipt.transaction.hash;
 
-        receipt.receipt.logs.iter().flat_map(|log| {
+        receipt.receipt.logs.iter().flat_map(move |log| {
+            let value_native = match &receipt.clone().transaction.value {
+                Some(b) => nBigInt::from_bytes_be(Sign::Plus, &b.bytes.to_vec()).to_string(),
+                None => {
+                    String::new()
+                }
+            };
             if let Some(event) = ERC1155TransferSingleEvent::match_and_decode(log) {
                 return vec![new_erc1155_single_transfer(
                     hash,
@@ -48,6 +55,8 @@ pub fn get_transfers(blk: &eth::Block) -> impl Iterator<Item = Transfer> + '_ {
                     &blk.hash,
                     receipt.transaction.index,
                     receipt.transaction.r#type,
+                    &receipt.transaction.from,
+                    value_native
                 )];
             }
 
@@ -63,6 +72,8 @@ pub fn get_transfers(blk: &eth::Block) -> impl Iterator<Item = Transfer> + '_ {
                     &blk.hash,
                     receipt.transaction.index,
                     receipt.transaction.r#type,
+                    &receipt.transaction.from,
+                    value_native
                 );
             }
 
@@ -81,7 +92,9 @@ fn new_erc1155_single_transfer(
     timestamp: u64,
     block_hash:&[u8],
     transaction_index: u32,
-    transaction_type: i32
+    transaction_type: i32,
+    transaction_intiator: &[u8],
+    value_native: String,
 ) -> Transfer {
     new_erc1155_transfer(
         hash,
@@ -97,7 +110,9 @@ fn new_erc1155_single_transfer(
         timestamp,
         block_hash,
         transaction_index,
-        transaction_type
+        transaction_type,
+        transaction_intiator,
+        value_native
     )
 }
 
@@ -111,7 +126,9 @@ fn new_erc1155_batch_transfer(
     timestamp: u64,
     block_hash:&[u8],
     transaction_index: u32,
-    transaction_type: i32
+    transaction_type: i32,
+    transaction_intiator: &[u8],
+    value_native: String,
 ) -> Vec<Transfer> {
     if event.ids.len() != event.values.len() {
         log::info!("There is a different count for ids ({}) and values ({}) in transaction {} for log at block index {}, ERC1155 spec says lenght should match, ignoring the log completely for now",
@@ -145,7 +162,9 @@ fn new_erc1155_batch_transfer(
                 timestamp,
                 block_hash,
                 transaction_index,
-                transaction_type
+                transaction_type,
+                transaction_intiator,
+                value_native.clone()
             )
         })
         .collect()
@@ -165,7 +184,9 @@ fn new_erc1155_transfer(
     timestamp: u64,
     block_hash:&[u8],
     transaction_index: u32,
-    transaction_type: i32
+    transaction_type: i32,
+    transaction_intiator: &[u8],
+    value_native: String,
 ) -> Transfer {
     Transfer {
         from: format_with_0x(Hex(from).to_string()),
@@ -181,7 +202,9 @@ fn new_erc1155_transfer(
         timestamp,
         block_hash: format_with_0x(Hex(block_hash).to_string()),
         transaction_index,
-        transaction_type
+        transaction_type,
+        transaction_initiator:format_with_0x(Hex(transaction_intiator).to_string()),
+        value: value_native
     }
 }
 

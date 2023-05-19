@@ -149,22 +149,21 @@ fn map_extract_mints(transfers: Transfers) -> Result<Mints, Error> {
 
         if map.get_mut(&(token_address.clone(), token_id.clone())).is_some() {
         } else {
-            let minter_address =
-                if Hex::decode(remove_0x(&transfer.from.clone())).unwrap() != NULL_ADDRESS {
-                    transfer.from.clone()
-                } else {
-                    transfer.to.clone()
+            
+                if Hex::decode(remove_0x(&transfer.from.clone())).unwrap() == NULL_ADDRESS {
+                   let  minter_address= transfer.transaction_initiator;
+                    let mint = Mint {
+                        token_address: transfer.token_address,
+                        token_id: transfer.token_id,
+                        minter_address,
+                        mint_block: transfer.block_number,
+                        min_trx: transfer.trx_hash,
+                    };
+        
+                    map.insert((token_address, token_id), mint);
                 };
 
-            let mint = Mint {
-                token_address: transfer.token_address,
-                token_id: transfer.token_id,
-                minter_address,
-                mint_block: transfer.block_number,
-                min_trx: transfer.trx_hash,
-            };
-
-            map.insert((token_address, token_id), mint);
+            
         }
     }
 

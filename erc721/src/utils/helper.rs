@@ -8,7 +8,7 @@ use substreams_ethereum::pb::eth::v2 as eth;
 use substreams_ethereum::rpc::RpcBatch;
 use substreams_ethereum::Event;
 use common::format_with_0x;
-
+use num_bigint::{BigInt as nBigInt, Sign};
 //pub const ERC721_IFACE_ID: [u8; 4] = hex!("01ffc9a7");
 pub const ERC721_METADATA_IFACE_ID: [u8; 4] = hex!("5b5e139f");
 
@@ -143,11 +143,18 @@ pub fn get_collections(token_addresses: Vec<String> , collection_owner_store: St
 }   
 
 pub fn get_transfers(blk: &eth::Block) -> impl Iterator<Item = Transfer> + '_ {
-    blk.receipts().flat_map(|receipt| {
+    blk.receipts().flat_map(move |receipt| {
         let hash = &receipt.transaction.hash;
 
-        receipt.receipt.logs.iter().flat_map(|log| {
+        receipt.receipt.logs.iter().flat_map(move |log| {
             if let Some(event) = ERC721TransferEvent::match_and_decode(log) {
+
+                let value = match &receipt.clone().transaction.value {
+                    Some(b) => nBigInt::from_bytes_be(Sign::Plus, &b.bytes.to_vec()).to_string(),
+                    None => {
+                        String::new()
+                    }
+                };
                 return vec![new_transfer(
                     hash,
                     log.block_index,
@@ -159,6 +166,8 @@ pub fn get_transfers(blk: &eth::Block) -> impl Iterator<Item = Transfer> + '_ {
                     &blk.hash,
                     receipt.transaction.index,
                     receipt.transaction.r#type,
+                    &receipt.transaction.from,
+                    value,
                 )];
             }
             vec![]
@@ -176,7 +185,9 @@ fn new_transfer(
     timestamp: u64,
     block_hash:&[u8],
     transaction_index: u32,
-    transaction_type: i32
+    transaction_type: i32,
+    transaction_intiator: &[u8],
+    value: String,
 ) -> Transfer {
     Transfer {
         token_address: format_with_0x(Hex::encode(&token_address)),
@@ -190,7 +201,9 @@ fn new_transfer(
         timestamp,
         block_hash: format_with_0x(Hex(block_hash).to_string()),
         transaction_index,
-        transaction_type
+        transaction_type,
+        transaction_initiator:format_with_0x(Hex(transaction_intiator).to_string()),
+        value
     }
 }
 

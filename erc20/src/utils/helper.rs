@@ -156,7 +156,11 @@ pub fn get_approvals(blk: &eth::Block) -> impl Iterator<Item = Approval> + '_ {
                         owner_address: format_with_0x(Hex::encode(event.owner)),
                         spender_address: format_with_0x(Hex::encode(event.spender)),
                         quantity: event.value.to_string(),
-                        log_index: log.block_index as u64
+                        log_index: log.block_index as u64,
+                        block_number: blk.number,
+                        timestamp: blk.timestamp_seconds(),
+                        block_hash: format_with_0x(Hex::encode(&blk.hash)),
+                        transaction_index: receipt.transaction.index
                     }),
                 ];
             }

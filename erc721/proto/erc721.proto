@@ -54,6 +54,8 @@ message Transfer {
   uint64 timestamp = 10;
   uint32 transaction_index = 11;
   int32 transaction_type = 12;
+  string transaction_initiator = 13;
+  string value = 14;
 }
 
 message Mints {

@@ -38,7 +38,8 @@ create table if not exists erc721_transfer
     block_hash TEXT,
     "timestamp" bigint,
     transaction_index int,
-    transaction_type int
+    transaction_type int,
+    "value" text
 );
 
 create table if not exists erc721_operator
@@ -90,7 +91,9 @@ create table if not exists erc1155_transfer
     block_hash TEXT,
     "timestamp" bigint,
     transaction_index int,
-    transaction_type int
+    transaction_type int,
+     "value" text,
+     operator text
 );
 
 create table if not exists erc1155_balance
@@ -124,7 +127,8 @@ create table if not exists erc20_balance
     id TEXT NOT NULL PRIMARY KEY,
     "contract" TEXT NOT NULL,
     account TEXT,
-    quantity TEXT
+    quantity TEXT,
+    block_number bigint
 );
 
 create table if not exists erc20_transfer
@@ -149,7 +153,13 @@ create table if not exists erc20_approval
     "contract" TEXT NOT NULL,
     "owner" TEXT,
     spender TEXT,
-    quantity TEXT
+    quantity TEXT,
+    trx_hash TEXT,
+    block_number bigint,
+    block_hash TEXT,
+    block_timestamp bigint,
+    log_index bigint,
+    transaction_index int
 );
 
 create table if not exists cursors

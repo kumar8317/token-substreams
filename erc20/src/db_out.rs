@@ -1,4 +1,6 @@
-use substreams::store::{Deltas, DeltaBigInt};
+use std::str::FromStr;
+
+use substreams::{store::{Deltas, DeltaBigInt}, scalar::BigInt};
 use substreams_database_change::pb::database::{table_change::Operation, DatabaseChanges};
 use common::sanitize_string;
 use crate::{pb::zdexer::eth::erc20::v1::{Transfers, Approvals, Contracts}, utils::keyer::{transfer_key, operator_key}};
@@ -91,7 +93,13 @@ pub fn approval_db_changes(
             .change("contract", (None,approval.token_address))
             .change("owner", (None,approval.owner_address))
             .change("spender", (None,approval.spender_address))
-            .change("quantity", (None,approval.quantity));
+            .change("quantity", (None,approval.quantity))
+            .change("trx_hash", (None,approval.trx_hash))
+            .change("block_number", (None,approval.block_number))
+            .change("block_hash", (None,approval.block_hash))
+            .change("block_timestamp", (None,approval.timestamp))
+            .change("log_index", (None,approval.log_index))
+            .change("transaction_index", (None,approval.transaction_index));
     }
 }
 
@@ -105,7 +113,7 @@ pub fn balance_db_changes(
         let keyclone = delta.key.clone();
         let account_address = keyclone.as_str().split('/').next().unwrap().to_string();
         let token_address = keyclone.as_str().split('/').nth(1).unwrap().to_string();
-
+        let block_number = keyclone.as_str().split('/').nth(2).unwrap().to_string();
         //account_db_changes(changes, account_address.clone());
 
         match delta.operation {
@@ -114,7 +122,8 @@ pub fn balance_db_changes(
                     .push_change("erc20_balance", &delta.key, delta.ordinal, Operation::Create)
                     .change("contract", (None,token_address.clone()))
                     .change("account", (None,account_address))
-                    .change("quantity", (None,delta.new_value.to_string()));
+                    .change("quantity", (None,delta.new_value.to_string()))
+                    .change("block_number", (None,BigInt::from_str(&block_number).unwrap()));
             },
             OperationDelta::Update => {
                 changes

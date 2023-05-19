@@ -43,6 +43,10 @@ message Approval {
   string quantity = 4;
   string owner_address = 5;
   uint64 log_index = 6;
+  string block_hash = 7;
+  uint64 block_number = 8;
+  uint64 timestamp = 9;
+  uint32 transaction_index = 10;
 }
 
 message Address{
