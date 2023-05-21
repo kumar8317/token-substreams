@@ -8,8 +8,7 @@ create table if not exists erc721_collection
     id TEXT NOT NULL PRIMARY KEY,
     "name" TEXT,
     symbol TEXT ,
-    supports_metadata Boolean,
-    owner_address TEXT
+    supports_metadata Boolean
 );
 
 create table if not exists erc721_token
@@ -40,6 +39,7 @@ create table if not exists erc721_transfer
     transaction_index int,
     transaction_type int,
     "value" text
+
 );
 
 create table if not exists erc721_operator
@@ -57,11 +57,6 @@ create table if not exists erc721_approval
     "token" TEXT NOT NULL,
     "owner" TEXT NOT NULL,
     approval TEXT
-);
-
-create table if not exists erc1155_collection (
-    id TEXT NOT NULL PRIMARY KEY,
-    owner_address TEXT
 );
 
 create table if not exists erc1155_token
@@ -144,7 +139,9 @@ create table if not exists erc20_transfer
     block_hash TEXT,
     "timestamp" bigint,
     transaction_index int,
-    transaction_type int
+    transaction_type int,
+    from_balance TEXT,
+    to_balance TEXT
 );
 
 create table if not exists erc20_approval
@@ -160,6 +157,13 @@ create table if not exists erc20_approval
     block_timestamp bigint,
     log_index bigint,
     transaction_index int
+);
+
+create table if not exists collection_owner
+(   
+    id TEXT NOT NULL PRIMARY KEY,
+    owner_address TEXT,
+    deploy_trx TEXT
 );
 
 create table if not exists cursors

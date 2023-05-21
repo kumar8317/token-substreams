@@ -10,11 +10,16 @@ type Account @entity {
 	ERC1155operatorOperator: [ERC1155Operator!]! @derivedFrom(field: "operator")
   ERC1155transferFromEvents: [ERC1155Transfer!] @derivedFrom(field:"from_address")
   ERC1155transferToEvents:[ERC1155Transfer!] @derivedFrom(field:"to_address")
-  ERC20balances: [ERC20Balance!]! @derivedFrom(field: "account")
   ERC20approvalsOwner: [ERC20Approval!]! @derivedFrom(field: "owner")
 	ERC20approvalsSpender: [ERC20Approval!]! @derivedFrom(field: "spender")
 	ERC20transferFromEvent: [ERC20Transfer!]! @derivedFrom(field: "from_address")
 	ERC20transferToEvent: [ERC20Transfer!]! @derivedFrom(field: "to_address")
+}
+
+type CollectionOwner @entity {
+  id: ID!
+  owner_address: Account!
+  deploy_trx: String
 }
 
 type ERC721Collection @entity {
@@ -22,7 +27,6 @@ type ERC721Collection @entity {
   name: String
   symbol: String
   supports_metadata: Boolean
-  owner_address: Account!
   tokens: [ERC721Token!] @derivedFrom(field: "collection")
   transfers: [ERC721Transfer!] @derivedFrom(field:"collection")
   operators: [ERC721Operator!] @derivedFrom(field:"collection")
@@ -132,16 +136,8 @@ type ERC20Contract @entity {
   name: String
   symbol: String
   decimals: BigInt
-  balances: [ERC20Balance!] @derivedFrom(field: "contract")
 	approvals: [ERC20Approval!] @derivedFrom(field: "contract")
 	transfers: [ERC20Transfer!] @derivedFrom(field: "contract")
-}
-
-type ERC20Balance @entity {
-  id: ID!
-  contract: ERC20Contract
-  account: Account
-  quantity: BigInt!
 }
 
 type ERC20Approval @entity {
@@ -165,4 +161,6 @@ type ERC20Transfer @entity {
   timestamp: BigInt
   transaction_index: BigInt
   transaction_type: Int
+  from_balance: BigInt
+  to_balance: BigInt
 }
