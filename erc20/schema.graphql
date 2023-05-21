@@ -1,0 +1,41 @@
+type Account @entity {
+  id: ID!
+  ERC20approvalsOwner: [ERC20Approval!]! @derivedFrom(field: "owner")
+	ERC20approvalsSpender: [ERC20Approval!]! @derivedFrom(field: "spender")
+	ERC20transferFromEvent: [ERC20Transfer!]! @derivedFrom(field: "from_address")
+	ERC20transferToEvent: [ERC20Transfer!]! @derivedFrom(field: "to_address")
+}
+
+type ERC20Contract @entity {
+  id: ID!
+  name: String
+  symbol: String
+  decimals: BigInt
+	approvals: [ERC20Approval!] @derivedFrom(field: "contract")
+	transfers: [ERC20Transfer!] @derivedFrom(field: "contract")
+}
+
+type ERC20Approval @entity {
+	id: ID!
+	contract: ERC20Contract!
+	owner: Account!
+	spender: Account!
+	quantity: BigInt!
+}
+
+type ERC20Transfer @entity {
+  id: ID!
+  contract: ERC20Contract!
+  trx_hash: String!
+  from_address: Account!
+  to_address: Account!
+  quantity: BigInt!
+  log_index: BigInt!
+  block_number: BigInt!
+  block_hash: String
+  timestamp: BigInt
+  transaction_index: BigInt
+  transaction_type: Int
+  from_balance: BigInt
+  to_balance: BigInt
+}

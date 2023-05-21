@@ -61,13 +61,13 @@ modules:
     output:
       type: proto:zdexer.eth.erc20.v1.Approvals
 
-  - name: store_balance
-    kind: store
-    initialBlock: 462663
-    updatePolicy: add
-    valueType: bigint
-    inputs: 
-      - map: map_transfers
+  # - name: store_balance
+  #   kind: store
+  #   initialBlock: 462663
+  #   updatePolicy: add
+  #   valueType: bigint
+  #   inputs: 
+  #     - map: map_transfers
 
   - name: map_contract_entities
     kind: map
@@ -94,14 +94,14 @@ modules:
     output:
       type: proto:substreams.entity.v1.EntityChanges
 
-  - name: map_balance_entities
-    kind: map
-    initialBlock: 462663
-    inputs:
-      - store: store_balance
-        mode: deltas
-    output:
-      type: proto:substreams.entity.v1.EntityChanges
+  # - name: map_balance_entities
+  #   kind: map
+  #   initialBlock: 462663
+  #   inputs:
+  #     - store: store_balance
+  #       mode: deltas
+  #   output:
+  #     type: proto:substreams.entity.v1.EntityChanges
 
   - name: graph_out
     kind: map
@@ -110,7 +110,7 @@ modules:
       - map: map_contract_entities
       - map: map_transfer_entities
       - map: map_approval_entities
-      - map: map_balance_entities
+      # - map: map_balance_entities
     output:
       type: proto:substreams.entity.v1.EntityChanges
 
@@ -139,14 +139,13 @@ modules:
     output:
       type: proto:sf.substreams.sink.database.v1.DatabaseChanges
 
-  - name: map_balances_db
-    kind: map
-    initialBlock: 462663
-    inputs:
-      - store: store_balance
-        mode: deltas
-    output:
-      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
+  # - name: map_balances_db
+  #   kind: map
+  #   initialBlock: 462663
+  #   inputs:
+  #     - map: map_transfers
+  #   output:
+  #     type: proto:sf.substreams.sink.database.v1.DatabaseChanges
 
   - name: db_out
     kind: map
@@ -155,6 +154,6 @@ modules:
       - map: map_contracts_db
       - map: map_transfers_db
       - map: map_approvals_db
-      - map: map_balances_db
+      # - map: map_balances_db
     output:
       type: proto:sf.substreams.sink.database.v1.DatabaseChanges

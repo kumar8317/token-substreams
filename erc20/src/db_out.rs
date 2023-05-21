@@ -1,25 +1,6 @@
-use std::str::FromStr;
-
-use substreams::{store::{Deltas, DeltaBigInt}, scalar::BigInt};
 use substreams_database_change::pb::database::{table_change::Operation, DatabaseChanges};
 use common::sanitize_string;
 use crate::{pb::zdexer::eth::erc20::v1::{Transfers, Approvals, Contracts}, utils::keyer::{transfer_key, operator_key}};
-
-// pub fn contract_db_changes(
-//     changes:&mut DatabaseChanges,
-//     contracts: Contracts
-// ) {
-//     for contract in contracts.items {
-//         //account_db_changes(changes, contract.owner_address.clone());
-//         let key = contract.token_address.clone();
-//         changes
-//             .push_change("erc20_contract", &key, 1, Operation::Create)
-//             .change("owner_address", (None,contract.owner_address))
-//             .change("name", (None,sanitize_string(&contract.name)))
-//             .change("symbol", (None,sanitize_string(&contract.symbol)))
-//             .change("decimals", (None,contract.decimals));
-//     }
-// }
 
 pub fn contract_db_changes(
     changes:&mut DatabaseChanges,
@@ -36,22 +17,6 @@ pub fn contract_db_changes(
     }
 }
 
-// pub fn contract_ownership_update_db_changes(changes: &mut DatabaseChanges, ownership_transfers: OwnershipTransfers) {
-//     for ownership_transfer in ownership_transfers.items {
-//         //account_db_changes(changes, ownership_transfer.new_owner.clone());
-//         changes
-//             .push_change("erc20_contract", &ownership_transfer.contract_address, 1, Operation::Update)
-//             .change("owner_address", (ownership_transfer.previous_owner,ownership_transfer.new_owner));
-//     }
-// }
-
-// pub fn account_db_changes(
-//     changes:&mut DatabaseChanges,
-//     account_address: String
-// ) {
-//     changes
-//         .push_change("account", &account_address, 1, Operation::Create);
-// }
 
 pub fn transfer_db_changes(
     changes:&mut DatabaseChanges,
@@ -73,8 +38,10 @@ pub fn transfer_db_changes(
             .change("block_number", (None,transfer.block_number))
             .change("block_hash", (None,transfer.block_hash))
             .change("timestamp", (None,transfer.timestamp))
-            .change("transaction_index", (None,transfer.transaction_index))
-            .change("transaction_type", (None,transfer.transaction_type));
+            .change("transaction_index", (None,transfer.transaction_index as u64))
+            .change("transaction_type", (None,transfer.transaction_type))
+            .change("from_balance", (None,transfer.balance_from))
+            .change("to_balance", (None,transfer.balance_to));
     }
 }
 
@@ -99,38 +66,6 @@ pub fn approval_db_changes(
             .change("block_hash", (None,approval.block_hash))
             .change("block_timestamp", (None,approval.timestamp))
             .change("log_index", (None,approval.log_index))
-            .change("transaction_index", (None,approval.transaction_index));
-    }
-}
-
-pub fn balance_db_changes(
-    changes:&mut DatabaseChanges,
-    deltas: Deltas<DeltaBigInt>
-) {
-    use substreams::pb::substreams::store_delta::Operation as OperationDelta;
-
-    for delta in deltas.deltas {
-        let keyclone = delta.key.clone();
-        let account_address = keyclone.as_str().split('/').next().unwrap().to_string();
-        let token_address = keyclone.as_str().split('/').nth(1).unwrap().to_string();
-        let block_number = keyclone.as_str().split('/').nth(2).unwrap().to_string();
-        //account_db_changes(changes, account_address.clone());
-
-        match delta.operation {
-            OperationDelta::Create =>{
-                changes
-                    .push_change("erc20_balance", &delta.key, delta.ordinal, Operation::Create)
-                    .change("contract", (None,token_address.clone()))
-                    .change("account", (None,account_address))
-                    .change("quantity", (None,delta.new_value.to_string()))
-                    .change("block_number", (None,BigInt::from_str(&block_number).unwrap()));
-            },
-            OperationDelta::Update => {
-                changes
-                    .push_change("erc20_balance", &delta.key, delta.ordinal, Operation::Update)
-                    .change("quantity", (delta.old_value.to_string(),delta.new_value.to_string()));
-            },
-            x => panic!("unsupported operation {:?}",x),
-        }
+            .change("transaction_index", (None,approval.transaction_index ));
     }
 }

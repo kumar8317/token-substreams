@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use substreams::{scalar::BigInt, store::{Deltas, DeltaBigInt}};
+use substreams::scalar::BigInt;
 use substreams_entity_change::pb::entity::{entity_change::Operation, EntityChanges};
 use crate::{
     pb::zdexer::eth::erc20::v1::{Contracts, Approvals, Transfers},
@@ -20,15 +20,6 @@ pub fn contract_entity_changes(changes: &mut EntityChanges, contracts: Contracts
             .change("decimals", contract.decimals);
     }
 }
-
-// pub fn contract_ownership_update_entity_change(changes: &mut EntityChanges, ownership_transfers: OwnershipTransfers) {
-//     for ownership_transfer in ownership_transfers.items {
-//         account_create_entity_changes(changes, ownership_transfer.new_owner.clone());
-//         changes
-//             .push_change("ERC20Contract", &ownership_transfer.contract_address, 1, Operation::Update)
-//             .change("owner_address", ownership_transfer.new_owner);
-//     }
-// }
 
 pub fn account_create_entity_changes(changes: &mut EntityChanges, account_address: String) {
     changes
@@ -59,7 +50,9 @@ pub fn transfer_entity_changes(changes: &mut EntityChanges, transfers: Transfers
             .change("block_hash", transfer.block_hash)
             .change("timestamp", transfer.timestamp)
             .change("transaction_index", transfer.transaction_index as u64)
-            .change("transaction_type", transfer.transaction_type);
+            .change("transaction_type", transfer.transaction_type)
+            .change("from_balance", BigInt::from_str(&transfer.balance_from).unwrap())
+            .change("to_balance", BigInt::from_str(&transfer.balance_to).unwrap());
     }
 }
 
@@ -76,37 +69,5 @@ pub fn approval_entity_changes(changes: &mut EntityChanges, approvals: Approvals
             .change("owner", approval.owner_address)
             .change("spender", approval.spender_address)
             .change("quantity", BigInt::from_str(&approval.quantity).unwrap());
-    }
-}
-
-pub fn balance_entity_changes(
-    changes:&mut EntityChanges,
-    deltas: Deltas<DeltaBigInt>
-){
-    use substreams::pb::substreams::store_delta::Operation as OperationDelta;
-
-    for delta in deltas.deltas {
-        let keyclone=delta.key.clone();
-        let account_address = keyclone.as_str().split('/').next().unwrap().to_string();
-        let token_address = keyclone.as_str().split('/').nth(1).unwrap().to_string();
-
-        account_create_entity_changes(changes, account_address.clone());
-
-        match delta.operation {
-            OperationDelta::Create =>{
-                changes
-                    .push_change("ERC20Balance", &delta.key, delta.ordinal, Operation::Create)
-                    .change("id", delta.key)
-                    .change("contract", token_address.clone())
-                    .change("account", account_address)
-                    .change("quantity", delta.new_value);
-            },
-            OperationDelta::Update =>{
-                changes
-                    .push_change("ERC20Balance", &delta.key, delta.ordinal, Operation::Update)
-                    .change("quantity", (delta.old_value,delta.new_value));
-            }
-            x=> panic!("unsupported operation {:?}",x),
-        }
     }
 }

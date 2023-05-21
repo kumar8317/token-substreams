@@ -99,6 +99,10 @@ pub fn get_transfers(blk: &eth::Block) -> impl Iterator<Item = Transfer> + '_ {
         
         receipt.receipt.logs.iter().flat_map(|log| {
             if let Some(event) = ERC20TransferEvent::match_and_decode(log) {
+                let (from_balance, to_balance) =get_balances(
+                    event.value.clone(),
+                    receipt.transaction.calls.clone()
+                );
                 return vec![new_erc20_transfer(
                     hash,
                     log.block_index,
@@ -110,6 +114,8 @@ pub fn get_transfers(blk: &eth::Block) -> impl Iterator<Item = Transfer> + '_ {
                     &blk.hash,
                     receipt.transaction.index,
                     receipt.transaction.r#type,
+                    from_balance,
+                    to_balance
                 )];
             }
              vec![]
@@ -127,7 +133,9 @@ fn new_erc20_transfer(
     timestamp: u64,
     block_hash:&[u8],
     transaction_index: u32,
-    transaction_type: i32
+    transaction_type: i32,
+    from_balance: BigInt,
+    to_balance: BigInt,
 ) -> Transfer {
     Transfer {
         from: format_with_0x(Hex(&event.from).to_string()),
@@ -141,7 +149,9 @@ fn new_erc20_transfer(
         timestamp,
         block_hash: format_with_0x(Hex(block_hash).to_string()),
         transaction_index,
-        transaction_type
+        transaction_type,
+        balance_from: from_balance.to_string(),
+        balance_to: to_balance.to_string()
     }
 }
 
@@ -168,4 +178,32 @@ pub fn get_approvals(blk: &eth::Block) -> impl Iterator<Item = Approval> + '_ {
             vec![]
         })
     })
+}
+
+fn get_balances(value: BigInt, calls: Vec<eth::Call>) -> (BigInt, BigInt) {
+    let mut from_balance = BigInt::from(0);
+    let mut to_balance = BigInt::from(0);
+    for call in calls {
+        for storage_change in call.storage_changes {
+
+            let old_value = BigInt::from_unsigned_bytes_be(&storage_change.old_value);
+            let new_value = BigInt::from_unsigned_bytes_be(&storage_change.new_value);
+            let mut from = false;
+            let mut amount =  new_value.clone()-old_value.clone();
+
+            if amount < BigInt::from(0) {
+                amount = amount.neg();
+                from = true;
+            }
+            
+            if amount == value {
+                if from {
+                    from_balance = new_value.clone();
+                } else {
+                    to_balance = new_value.clone();
+                }
+            }
+        }
+    }
+    return (from_balance, to_balance);
 }
