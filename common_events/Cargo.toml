@@ -13,6 +13,8 @@ prost = "0.11"
 substreams = "0.5"
 substreams-ethereum = "0.9"
 num-bigint = "0.4.3"
+substreams-database-change = "1.0.0"
+substreams-entity-change = "0.3.0"
 common = {path = "../common"}
 
 # Required so that ethabi > ethereum-types build correctly under wasm32-unknown-unknown

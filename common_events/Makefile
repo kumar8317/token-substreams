@@ -16,3 +16,7 @@ package:build
 .PHONY: stream_map_ownership_transfers
 stream_map_ownership_transfers: build
 	substreams run -e $(ENDPOINT) substreams.yaml map_ownership_transfers -s 12287507 -t +1
+
+.PHONY: stream_map_collection_owners
+stream_map_collection_owners: build
+	substreams run -e $(ENDPOINT) substreams.yaml map_collection_owners -s 847527 -t +1

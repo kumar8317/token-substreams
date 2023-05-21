@@ -10,3 +10,13 @@ message OwnershipTransfer {
   string previous_owner = 2;
   string new_owner = 3;
 }
+
+message CollectionOwners{
+  repeated CollectionOwner items = 1;
+}
+
+message CollectionOwner {
+  string owner_address = 1;
+  string deploy_trx = 2;
+  string token_address = 3;
+}

@@ -3,6 +3,10 @@ package:
   name: "common_events"
   version: v0.0.1
 
+imports:
+  database_change: https://github.com/streamingfast/substreams-database-change/releases/download/v0.1.0/substreams-database-change-v0.1.0.spkg
+  entity: https://github.com/streamingfast/substreams-entity-change/releases/download/v0.2.1/substreams-entity-change-v0.2.1.spkg
+
 protobuf:
   files:
     - events.proto
@@ -22,3 +26,29 @@ modules:
       - source: sf.ethereum.type.v2.Block
     output:
       type: proto:zdexer.eth.events.v1.OwnershipTransfers
+
+  - name: map_collection_owners
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:zdexer.eth.events.v1.CollectionOwners
+  
+  - name: map_collection_owner_entities
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - map: map_collection_owners
+      - map: map_ownership_transfers
+    output:
+      type: proto:substreams.entity.v1.EntityChanges
+  
+  - name: map_collections_owners_db
+    kind: map
+    initialBlock: 462663
+    inputs:
+      - map: map_collection_owners
+      - map: map_ownership_transfers
+    output:
+      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
