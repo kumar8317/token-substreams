@@ -9,6 +9,7 @@ imports:
   erc20: ../target/erc20-v0.0.1.spkg
   erc721: ../target/erc721-v0.0.1.spkg
   erc1155: ../target/erc1155-v0.0.1.spkg
+  common_events: ../target/common_events-v0.0.1.spkg
 
 binaries:
   default:
@@ -23,6 +24,7 @@ modules:
       - map: erc20:graph_out
       - map: erc721:graph_out
       - map: erc1155:graph_out
+      - map: common_events:map_collection_owner_entities
     output:
       type: proto:substreams.entity.v1.EntityChanges
 
@@ -33,6 +35,7 @@ modules:
       - map: erc20:db_out
       - map: erc721:db_out
       - map: erc1155:db_out
+      - map: common_events:map_collections_owners_db
     output:
       type: proto:sf.substreams.sink.database.v1.DatabaseChanges
 
