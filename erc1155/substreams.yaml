@@ -6,7 +6,6 @@ package:
 imports:
   database_change: https://github.com/streamingfast/substreams-database-change/releases/download/v0.1.0/substreams-database-change-v0.1.0.spkg
   entity: https://github.com/streamingfast/substreams-entity-change/releases/download/v0.2.1/substreams-entity-change-v0.2.1.spkg
-  common_events: ../target/common_events-v0.0.1.spkg
 
 protobuf:
   files:
@@ -20,23 +19,6 @@ binaries:
     file: ../target/wasm32-unknown-unknown/release/erc1155.wasm
 
 modules:
-
-  - name: store_collections_owners
-    kind: store
-    initialBlock: 462663
-    updatePolicy: set_if_not_exists
-    valueType: proto:zdexer.eth.erc1155.v1.Collection
-    inputs: 
-      - source: sf.ethereum.type.v2.Block
-
-  # - name: map_collections
-  #   kind: map
-  #   initialBlock: 462663
-  #   inputs:
-  #     - source: sf.ethereum.type.v2.Block
-  #   output:
-  #     type: proto:zdexer.eth.erc1155.v1.Collections 
-  
   - name: map_transfers
     kind: map
     initialBlock: 462663
@@ -52,16 +34,6 @@ modules:
     valueType: proto:zdexer.eth.erc1155.v1.Address
     inputs: 
       - map: map_transfers
-
-  - name: map_collections
-    kind: map
-    initialBlock: 462663
-    inputs:
-      - store: store_address
-        mode: deltas
-      - store: store_collections_owners
-    output:
-      type: proto:zdexer.eth.erc1155.v1.Collections 
 
   - name: map_approvals
     kind: map
@@ -104,15 +76,6 @@ modules:
     inputs: 
       - map: map_transfers
 
-  - name: map_collection_entities
-    kind: map
-    initialBlock: 462663
-    inputs:
-      - map: map_collections
-      - map: common_events:map_ownership_transfers
-    output:
-      type: proto:substreams.entity.v1.EntityChanges
-
   - name: map_transfer_entities
     kind: map
     initialBlock: 462663
@@ -151,22 +114,12 @@ modules:
     kind: map
     initialBlock: 462663
     inputs:
-      - map: map_collection_entities
       - map: map_token_entities
       - map: map_transfer_entities
       - map: map_operator_entities
       - map: map_balance_entities
     output:
       type: proto:substreams.entity.v1.EntityChanges
-
-  - name: map_collections_db
-    kind: map
-    initialBlock: 462663
-    inputs:
-      - map: map_collections
-      - map: common_events:map_ownership_transfers
-    output:
-      type: proto:sf.substreams.sink.database.v1.DatabaseChanges
 
   - name: map_transfers_db
     kind: map
@@ -207,7 +160,6 @@ modules:
     kind: map
     initialBlock: 462663
     inputs:
-      - map: map_collections_db
       - map: map_tokens_db
       - map: map_transfers_db
       - map: map_operators_db

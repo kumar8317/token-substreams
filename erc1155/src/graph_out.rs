@@ -1,36 +1,14 @@
 use std::str::FromStr;
-use common::pb::zdexer::eth::events::v1::OwnershipTransfers;
 use substreams::{scalar::BigInt, Hex, store::{Deltas, DeltaBigInt}};
 use substreams_entity_change::pb::entity::{entity_change::Operation, EntityChanges};
 
 use crate::{
-    pb::zdexer::eth::erc1155::v1::{Collections, Mints, Operators, Tokens, Transfers},
+    pb::zdexer::eth::erc1155::v1::{ Mints, Operators, Tokens, Transfers},
     utils::{
         keyer::{operator_key, token_store_key, transfer_key},
     },
 };
 use common::{ZERO_ADDRESS,format_with_0x};
-
-pub fn collection_entity_change(changes: &mut EntityChanges, collections: Collections) {
-    for collection in collections.items {
-        account_create_entity_change(changes, collection.owner_address.clone());
-
-        let key = collection.token_address.clone();
-        changes
-            .push_change("ERC1155Collection", &key, 1, Operation::Create)
-            .change("id", collection.token_address)
-            .change("owner_address", collection.owner_address);
-    }
-}
-
-pub fn collection_ownership_update_entity_change(changes: &mut EntityChanges, ownership_transfers: OwnershipTransfers) {
-    for ownership_transfer in ownership_transfers.items {
-        account_create_entity_change(changes, ownership_transfer.new_owner.clone());
-        changes
-            .push_change("ERC1155Collection", &ownership_transfer.contract_address, 1, Operation::Update)
-            .change("owner_address", ownership_transfer.new_owner);
-    }
-}
 
 pub fn account_create_entity_change(changes: &mut EntityChanges, account_address: String) {
     changes

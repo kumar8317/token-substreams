@@ -11,15 +11,14 @@ mod utils;
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use common::format_with_0x;
-use common::{pb::zdexer::eth::events::v1::OwnershipTransfers, remove_0x};
-use pb::zdexer::eth::erc1155::v1::{Collections, Mint, Mints, Operators, Token, Tokens, Transfers, Collection, Address};
+use common:: remove_0x;
+use pb::zdexer::eth::erc1155::v1::{ Mint, Mints, Operators, Token, Tokens, Transfers, Address};
 use rpc::RpcTokenURI;
 use substreams::store::{
-    DeltaBigInt, DeltaProto, Deltas, StoreAdd, StoreAddBigInt, StoreNew, StoreSet, StoreSetProto, StoreSetIfNotExistsProto, StoreGetProto, StoreGet,
+    DeltaBigInt, DeltaProto, Deltas, StoreAdd, StoreAddBigInt, StoreNew, StoreSet, StoreSetProto, StoreSetIfNotExistsProto,
     StoreSetIfNotExists
 };
-use substreams::{errors::Error, hex, log, scalar::BigInt, Hex};
+use substreams::{errors::Error, log, scalar::BigInt, Hex};
 use substreams_database_change::pb::database::DatabaseChanges;
 use substreams_entity_change::pb::entity::EntityChanges;
 use substreams_ethereum::NULL_ADDRESS;
@@ -27,78 +26,6 @@ use substreams_ethereum::{pb::eth::v2 as eth, rpc::RpcBatch};
 use utils::helper::get_approvals;
 use utils::helper::get_transfers;
 use utils::keyer;
-
-const INITIALIZE_METHOD_HASH: [u8; 4] = hex!("1459457a");
-
-// #[substreams::handlers::map]
-// fn map_collections(blk: eth::Block) -> Result<Collections, Error> {
-//     let mut erc1155_collections = Collections { items: vec![] };
-
-//     for call_view in blk.calls() {
-//         let tx_hash = Hex(&call_view.transaction.hash).to_string();
-//         let from = Hex(&call_view.transaction.from).to_string();
-
-//         let call = call_view.call;
-//         if call.call_type == eth::CallType::Create as i32 {
-//             let call_input_len = call.input.len();
-//             if call.call_type == eth::CallType::Call as i32
-//                 && (call_input_len < 4 || call.input[0..4] != INITIALIZE_METHOD_HASH)
-//             {
-//                 // this will check if a proxy contract has been called to create a contract.
-//                 // if that is the case the Proxy contract will call the initialize function on the contract
-//                 // this is part of the OpenZeppelin Proxy contract standard
-//                 //log::debug!("{:?}if false--- ", INITIALIZE_METHOD_HASH);
-//                 continue;
-//             }
-
-//             let address = Hex(&call.address).to_string();
-
-//             log::info!("address {}", address);
-
-//             let collection = helper::get_collections(&address, &tx_hash, &from);
-//             if collection.is_some() {
-//                 erc1155_collections.items.push(collection.unwrap());
-//             }
-//         }
-//     }
-
-//     Ok(erc1155_collections)
-// }
-
-#[substreams::handlers::store]
-fn store_collections_owners(blk: eth::Block, output: StoreSetIfNotExistsProto<Collection>) {
-    for call_view in blk.calls() {
-        let tx_hash = Hex(&call_view.transaction.hash).to_string();
-        let from = Hex(&call_view.transaction.from).to_string();
-
-        let call = call_view.call;
-        if call.call_type == eth::CallType::Create as i32 {
-            let call_input_len = call.input.len();
-            if call.call_type == eth::CallType::Call as i32
-                && (call_input_len < 4 || call.input[0..4] != INITIALIZE_METHOD_HASH)
-            {
-                // this will check if a proxy contract has been called to create a contract.
-                // if that is the case the Proxy contract will call the initialize function on the contract
-                // this is part of the OpenZeppelin Proxy contract standard
-                //log::debug!("{:?}if false--- ", INITIALIZE_METHOD_HASH);
-                continue;
-            }
-
-            let address = Hex(&call.address).to_string();
-
-            output.set_if_not_exists(
-                1,
-                &format_with_0x(address.clone()),
-                &Collection{
-                    owner_address: format_with_0x(from),
-                    deploy_trx: format_with_0x(tx_hash),
-                    token_address: format_with_0x(address)
-                }
-            );
-        }
-    }
-
-}
 
 #[substreams::handlers::map]
 fn map_transfers(blk: eth::Block) -> Result<Transfers, Error> {
@@ -116,26 +43,6 @@ fn store_address(transfers: Transfers, output: StoreSetIfNotExistsProto<Address>
             &Address{ address: transfer.token_address.clone() },
         );
     }
-}
-
-#[substreams::handlers::map]
-fn map_collections( deltas: Deltas<DeltaProto<Address>>, collections_store: StoreGetProto<Collection>) -> Result<Collections, Error> {
-    let mut collections = Collections {items:vec![]};
-
-    for delta in deltas.deltas {
-        let token_address = delta.new_value.address;
-
-        match collections_store.get_last(token_address) {
-            Some( data) =>{
-                collections.items.push(data);
-            },
-            None => {
-
-            }
-        }
-
-    }
-    Ok(collections)
 }
 
 #[substreams::handlers::map]
@@ -259,18 +166,6 @@ fn store_balance(transfers: Transfers, output: StoreAddBigInt) {
 }
 
 #[substreams::handlers::map]
-fn map_collection_entities(
-    collections: Collections,
-    ownership_transfers: OwnershipTransfers,
-) -> Result<EntityChanges, Error> {
-    let mut entity_changes: EntityChanges = Default::default();
-
-    graph::collection_entity_change(&mut entity_changes, collections);
-    graph::collection_ownership_update_entity_change(&mut entity_changes, ownership_transfers);
-    Ok(entity_changes)
-}
-
-#[substreams::handlers::map]
 fn map_transfer_entities(transfers: Transfers) -> Result<EntityChanges, Error> {
     let mut entity_changes: EntityChanges = Default::default();
 
@@ -303,7 +198,6 @@ fn map_balance_entities(deltas: Deltas<DeltaBigInt>) -> Result<EntityChanges, Er
 
 #[substreams::handlers::map]
 fn graph_out(
-    collection_entities: EntityChanges,
     token_entities: EntityChanges,
     transfer_entities: EntityChanges,
     operator_entities: EntityChanges,
@@ -311,7 +205,6 @@ fn graph_out(
 ) -> Result<EntityChanges, Error> {
     Ok(EntityChanges {
         entity_changes: [
-            collection_entities.entity_changes,
             token_entities.entity_changes,
             transfer_entities.entity_changes,
             operator_entities.entity_changes,
@@ -321,17 +214,6 @@ fn graph_out(
     })
 }
 
-#[substreams::handlers::map]
-fn map_collections_db(
-    collections: Collections,
-    ownership_transfers: OwnershipTransfers,
-) -> Result<DatabaseChanges, Error> {
-    let mut database_changes: DatabaseChanges = Default::default();
-
-    db::collection_db_changes(&mut database_changes, collections);
-    db::collection_ownership_update_db_changes(&mut database_changes, ownership_transfers);
-    Ok(database_changes)
-}
 
 #[substreams::handlers::map]
 fn map_transfers_db(transfers: Transfers) -> Result<DatabaseChanges, Error> {
@@ -341,17 +223,6 @@ fn map_transfers_db(transfers: Transfers) -> Result<DatabaseChanges, Error> {
 
     Ok(database_changes)
 }
-
-// #[substreams::handlers::map]
-// fn map_tokens_db(
-//     tokens: Tokens,
-//     mints: Mints,
-// ) -> Result<DatabaseChanges, Error> {
-//     let mut database_changes: DatabaseChanges = Default::default();
-//     db::token_db_changes(&mut database_changes, tokens);
-//     db::mints_token_db_changes(&mut database_changes, mints);
-//     Ok(database_changes)
-// }
 
 #[substreams::handlers::map]
 fn map_tokens_db(
@@ -383,7 +254,6 @@ fn map_balances_db(deltas: Deltas<DeltaBigInt>) -> Result<DatabaseChanges, Error
 
 #[substreams::handlers::map]
 fn db_out(
-    collections_db: DatabaseChanges,
     tokens_db: DatabaseChanges,
     transfers_db: DatabaseChanges,
     approvals_db: DatabaseChanges,
@@ -391,7 +261,6 @@ fn db_out(
 ) -> Result<DatabaseChanges, Error> {
     Ok(DatabaseChanges {
         table_changes: [
-            collections_db.table_changes,
             tokens_db.table_changes,
             transfers_db.table_changes,
             approvals_db.table_changes,

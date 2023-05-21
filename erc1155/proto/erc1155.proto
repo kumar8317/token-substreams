@@ -6,16 +6,6 @@ message Address{
   string address = 1;
 }
 
-message Collections{
-  repeated Collection items = 1;
-}
-
-message Collection {
-  string token_address = 1;
-  string owner_address = 5;
-  string deploy_trx = 6;
-}
-
 message Tokens{
   repeated Token items = 1;
 }
