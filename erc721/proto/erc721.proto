@@ -6,12 +6,6 @@ message Address{
   string address = 1;
 }
 
-message CollectionOwner {
-  string owner_address = 1;
-  string deploy_trx = 2;
-  string token_address = 3;
-}
-
 message Collections{
   repeated Collection items = 1;
 }
@@ -21,8 +15,6 @@ message Collection {
   string name = 2;
   string symbol = 3;
   bool supports_metadata = 4;
-  string owner_address = 5;
-  string deploy_trx = 6;
 }
 
 message Tokens{

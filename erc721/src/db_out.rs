@@ -1,6 +1,6 @@
 use substreams::{scalar::BigInt, Hex, store::{Deltas, DeltaProto}};
 use substreams_database_change::pb::database::{table_change::Operation, DatabaseChanges};
-use common::{pb::zdexer::eth::events::v1::OwnershipTransfers, sanitize_string};
+use common:: sanitize_string;
 use crate::{pb::zdexer::eth::erc721::v1::{Collections, Transfers, Approvals, Mints, Token}, utils::{keyer::{transfer_key, operator_key, token_store_key}}};
 use common::{ZERO_ADDRESS,format_with_0x};
 
@@ -13,27 +13,11 @@ pub fn collection_db_changes(
         let key = collection.token_address.clone();
         changes
             .push_change("erc721_collection", &key, 1, Operation::Create)
-            .change("owner_address", (None,collection.owner_address))
             .change("name", (None,sanitize_string(&collection.name)))
             .change("symbol", (None,sanitize_string(&collection.symbol)))
             .change("supports_metadata", (None,collection.supports_metadata));
     }
 }
-pub fn collection_ownership_update_db_changes(changes: &mut DatabaseChanges, ownership_transfers: OwnershipTransfers) {
-    for ownership_transfer in ownership_transfers.items {
-       // account_db_changes(changes, ownership_transfer.new_owner.clone());
-        changes
-            .push_change("erc721_collection", &ownership_transfer.contract_address, 1, Operation::Update)
-            .change("owner_address", (ownership_transfer.previous_owner,ownership_transfer.new_owner));
-    }
-}
-// pub fn account_db_changes(
-//     changes:&mut DatabaseChanges,
-//     account_address: String
-// ) {
-//     changes
-//         .push_change("account", &account_address, 1, Operation::Create);
-// }
 
 pub fn transfer_db_changes(
     changes:&mut DatabaseChanges,
@@ -61,39 +45,6 @@ pub fn transfer_db_changes(
     }
 }
 
-// pub fn token_db_changes(
-//     changes:&mut DatabaseChanges,
-//     tokens: Tokens
-// ) {
-//     for token in tokens.items {
-//         //account_db_changes(changes, token.owner_address.clone());
-//         let key = token_store_key(&token.token_address, &token.token_id);
-
-//         changes
-//             .push_change("erc721_token", &key, 1, Operation::Create)
-//             .change("collection", (None,token.token_address))
-//             .change("token_id", (None,token.token_id))
-//             .change("metadata_uri", (None,token.metadata_uri))
-//             .change("owner_address", (None,token.owner_address))
-//             .change("block_number", (None,token.block_number))
-//             .change(
-//                 "minter_address",
-//                 (None,format_with_0x(Hex::encode(ZERO_ADDRESS).to_string())),
-//             )
-//             .change("block_number_minted", (None,BigInt::zero()))
-//             .change(
-//                 "approval",
-//                 (None,format_with_0x(Hex::encode(ZERO_ADDRESS).to_string())),
-//             )
-//             .change(
-//                 "mint_trx",
-//                 (None,format_with_0x(Hex::encode(ZERO_ADDRESS).to_string())),
-//             );
-
-//             changes
-//                 .push_change("erc721_token", &key, 1, Operation::Update);
-//     }
-// }
 
 pub fn token_db_changes(
     changes:&mut DatabaseChanges,

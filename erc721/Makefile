@@ -1,7 +1,7 @@
 ENDPOINT ?= mainnet.eth.streamingfast.io:443
 # ENDPOINT ?= goerli.eth.streamingfast.io:443
 startBlock ?= 847527
-endBlock ?=  937822
+endBlock ?=  937910
 
 .PHONY: build
 build:

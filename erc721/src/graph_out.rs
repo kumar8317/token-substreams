@@ -1,10 +1,9 @@
-use common::pb::zdexer::eth::events::v1::OwnershipTransfers;
 use substreams::{Hex, scalar::BigInt};
 use substreams_entity_change::pb::entity::{entity_change::Operation, EntityChanges};
 
 use crate::{
     pb::zdexer::eth::erc721::v1::{
-        Approvals, Collections, Mints, Tokens, Transfers,
+        Approvals, Collections, Mints, Tokens, Transfers
     },
     utils::{
         keyer::{operator_key, transfer_key, token_store_key},
@@ -14,7 +13,6 @@ use common::{ZERO_ADDRESS,format_with_0x};
 
 pub fn collection_entity_change(changes: &mut EntityChanges, collections: Collections) {
     for collection in collections.items {
-        account_create_entity_change(changes, collection.owner_address.clone());
 
         let key = collection.token_address.clone();
         changes
@@ -22,17 +20,7 @@ pub fn collection_entity_change(changes: &mut EntityChanges, collections: Collec
             .change("id", collection.token_address)
             .change("name", collection.name)
             .change("symbol", collection.symbol)
-            .change("supports_metadata", collection.supports_metadata)
-            .change("owner_address", collection.owner_address);
-    }
-}
-
-pub fn collection_ownership_update_entity_change(changes: &mut EntityChanges, ownership_transfers: OwnershipTransfers) {
-    for ownership_transfer in ownership_transfers.items {
-        account_create_entity_change(changes, ownership_transfer.new_owner.clone());
-        changes
-            .push_change("ERC721Collection", &ownership_transfer.contract_address, 1, Operation::Update)
-            .change("owner_address", ownership_transfer.new_owner);
+            .change("supports_metadata", collection.supports_metadata);
     }
 }
 

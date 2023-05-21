@@ -13,94 +13,19 @@ use std::str::FromStr;
 
 use pb::zdexer::eth::erc721::v1::{
     Approvals, Collections, Mint, Mints, Token, Tokens,
-    Transfers, Transfer, CollectionOwner, Address
+    Transfers, Transfer, Address
 };
 use rpc::RpcTokenURI;
-use substreams::store::{StoreSetProto, StoreNew, StoreSet, Deltas, DeltaProto, StoreGetProto, StoreSetIfNotExistsProto, StoreGet, StoreSetIfNotExists};
-use substreams::{errors::Error, hex, scalar::BigInt, Hex};
+use substreams::store::{StoreSetProto, StoreNew, StoreSet, Deltas, DeltaProto, StoreSetIfNotExistsProto, StoreSetIfNotExists};
+use substreams::{errors::Error, scalar::BigInt, Hex};
 use substreams_database_change::pb::database::DatabaseChanges;
 use substreams_entity_change::pb::entity::EntityChanges;
 use substreams_ethereum::NULL_ADDRESS;
 use substreams_ethereum::{pb::eth::v2 as eth, rpc::RpcBatch};
 use utils::helper::get_approvals;
-use common::{remove_0x, format_with_0x};
+use common::remove_0x;
 use utils::helper::{self, get_transfers};
-use common::pb::zdexer::eth::events::v1::OwnershipTransfers;
 use utils::keyer;
-
-const INITIALIZE_METHOD_HASH: [u8; 4] = hex!("1459457a");
-
-#[substreams::handlers::store]
-fn store_collections_owners(blk: eth::Block, output: StoreSetIfNotExistsProto<CollectionOwner>) {
-
-    for call_view in blk.calls() {
-        let tx_hash = Hex(&call_view.transaction.hash).to_string();
-        let from = Hex(&call_view.transaction.from).to_string();
-
-        let call = call_view.call;
-        if call.call_type == eth::CallType::Create as i32 {
-            let call_input_len = call.input.len();
-            if call.call_type == eth::CallType::Call as i32
-                && (call_input_len < 4 || call.input[0..4] != INITIALIZE_METHOD_HASH)
-            {
-                // this will check if a proxy contract has been called to create a contract.
-                // if that is the case the Proxy contract will call the initialize function on the contract
-                // this is part of the OpenZeppelin Proxy contract standard
-                //log::debug!("{:?}if false--- ", INITIALIZE_METHOD_HASH);
-                continue;
-            }
-
-            let address = Hex(&call.address).to_string();
-
-            output.set_if_not_exists(
-                1,
-                &format_with_0x(address.clone()),
-                &CollectionOwner {
-                    token_address: format_with_0x(address),
-                    owner_address: format_with_0x(from),
-                    deploy_trx: format_with_0x(tx_hash),
-                }
-            );
-        }
-    }
-
-
-}
-
-// #[substreams::handlers::map]
-// fn map_collections(blk: eth::Block) -> Result<Collections, Error> {
-//     let mut erc721_collections = Collections { items: vec![] };
-
-//     for call_view in blk.calls() {
-//         let tx_hash = Hex(&call_view.transaction.hash).to_string();
-//         let from = Hex(&call_view.transaction.from).to_string();
-
-//         let call = call_view.call;
-//         if call.call_type == eth::CallType::Create as i32 {
-//             let call_input_len = call.input.len();
-//             if call.call_type == eth::CallType::Call as i32
-//                 && (call_input_len < 4 || call.input[0..4] != INITIALIZE_METHOD_HASH)
-//             {
-//                 // this will check if a proxy contract has been called to create a contract.
-//                 // if that is the case the Proxy contract will call the initialize function on the contract
-//                 // this is part of the OpenZeppelin Proxy contract standard
-//                 //log::debug!("{:?}if false--- ", INITIALIZE_METHOD_HASH);
-//                 continue;
-//             }
-
-//             let address = Hex(&call.address).to_string();
-
-//             log::info!("address {}", address);
-
-//             let collection = helper::get_collections(&address, &tx_hash, &from);
-//             if collection.is_some() {
-//                 erc721_collections.items.push(collection.unwrap());
-//             }
-//         }
-//     }
-
-//     Ok(erc721_collections)
-// }
 
 #[substreams::handlers::map]
 fn map_transfers(blk: eth::Block) -> Result<Transfers, Error> {
@@ -121,14 +46,14 @@ fn store_address(transfers: Transfers, output: StoreSetIfNotExistsProto<Address>
 }
 
 #[substreams::handlers::map]
-fn map_collections(deltas: Deltas<DeltaProto<Address>>, collection_owner_store: StoreGetProto<CollectionOwner>) -> Result<Collections, Error> {
+fn map_collections(deltas: Deltas<DeltaProto<Address>>) -> Result<Collections, Error> {
     
     let mut array_addresses = vec![];
     for delta in deltas.deltas {
         let token_address = delta.new_value.address;
         array_addresses.push(remove_0x(&token_address));
     }
-    let collections = helper::get_collections(array_addresses,collection_owner_store);
+    let collections = helper::get_collections(array_addresses);
     Ok(collections)
 }
 
@@ -246,11 +171,11 @@ fn store_tokens(tokens: Tokens, output: StoreSetProto<Token>)
 }
 
 #[substreams::handlers::map]
-fn map_collection_entities(collections: Collections, ownership_transfers: OwnershipTransfers)-> Result<EntityChanges, Error> {
+fn map_collection_entities(collections: Collections,)-> Result<EntityChanges, Error> {
     let mut entity_changes: EntityChanges = Default::default();
 
     graph::collection_entity_change(&mut entity_changes, collections);
-    graph::collection_ownership_update_entity_change(&mut entity_changes, ownership_transfers);
+    //graph::collection_ownership_update_entity_change(&mut entity_changes, ownership_transfers);
     Ok(entity_changes)
 }
 
@@ -301,14 +226,15 @@ fn graph_out(
 }
 
 #[substreams::handlers::map]
-fn map_collections_db(collections: Collections,ownership_transfers: OwnershipTransfers) -> Result<DatabaseChanges, Error> {
+fn map_collections_db(collections: Collections) -> Result<DatabaseChanges, Error> {
     let mut database_changes: DatabaseChanges = Default::default();
 
     db::collection_db_changes(&mut database_changes, collections);
-    db::collection_ownership_update_db_changes(&mut database_changes, ownership_transfers);
+   // db::collection_ownership_update_db_changes(&mut database_changes, ownership_transfers);
 
     Ok(database_changes)
 }
+
 
 #[substreams::handlers::map]
 fn map_transfers_db(transfers: Transfers) -> Result<DatabaseChanges, Error> {
@@ -318,17 +244,6 @@ fn map_transfers_db(transfers: Transfers) -> Result<DatabaseChanges, Error> {
 
     Ok(database_changes)
 }
-
-// #[substreams::handlers::map]
-// fn map_tokens_db(
-//     tokens: Tokens,
-//     mints: Mints,
-// ) -> Result<DatabaseChanges, Error> {
-//     let mut database_changes: DatabaseChanges = Default::default();
-//     db::token_db_changes(&mut database_changes, tokens);
-//     db::mints_token_db_changes(&mut database_changes, mints);
-//     Ok(database_changes)
-// }
 
 #[substreams::handlers::map]
 fn map_tokens_db(
