@@ -1,4 +1,4 @@
-use substreams::{scalar::BigInt, store::{Deltas, DeltaBigInt}, Hex};
+use substreams::{scalar::BigInt, store::Deltas, Hex};
 use substreams::prelude::DeltaProto;
 use substreams_database_change::pb::database::{table_change::Operation, DatabaseChanges};
 use crate::{pb::zdexer::eth::erc1155::v1::{Transfers, Operators, Mints, Token}, utils::keyer::{transfer_key, operator_key, token_store_key}};
@@ -29,7 +29,9 @@ pub fn transfer_db_changes(
             .change("transaction_index", (None,transfer.transaction_index))
             .change("transaction_type", (None,transfer.transaction_type))
             .change("value", (None,transfer.value))
-            .change("operator", (None,transfer.operator));
+            .change("operator", (None,transfer.operator))
+            .change("from_balance", (None,transfer.balance_from))
+            .change("to_balance", (None,transfer.balance_to));
     }
 }
 
@@ -105,35 +107,35 @@ pub fn approval_operator_db_changes(
     }
 }
 
-pub fn balance_db_changes(
-    changes:&mut DatabaseChanges,
-    deltas: Deltas<DeltaBigInt>
-) {
-    use substreams::pb::substreams::store_delta::Operation as OperationDelta;
+// pub fn balance_db_changes(
+//     changes:&mut DatabaseChanges,
+//     deltas: Deltas<DeltaBigInt>
+// ) {
+//     use substreams::pb::substreams::store_delta::Operation as OperationDelta;
 
-    for delta in deltas.deltas {
-        let keyclone = delta.key.clone();
-        let account_address = keyclone.as_str().split('/').next().unwrap().to_string();
-        let token_address = keyclone.as_str().split('/').nth(1).unwrap().to_string();
-        let token_id = keyclone.as_str().split('/').nth(2).unwrap().to_string();
+//     for delta in deltas.deltas {
+//         let keyclone = delta.key.clone();
+//         let account_address = keyclone.as_str().split('/').next().unwrap().to_string();
+//         let token_address = keyclone.as_str().split('/').nth(1).unwrap().to_string();
+//         let token_id = keyclone.as_str().split('/').nth(2).unwrap().to_string();
 
-        //account_db_changes(changes, account_address.clone());
+//         //account_db_changes(changes, account_address.clone());
 
-        match delta.operation {
-            OperationDelta::Create =>{
-                changes
-                    .push_change("erc1155_balance", &delta.key, delta.ordinal, Operation::Create)
-                    .change("collection", (None,token_address.clone()))
-                    .change("token", (None,token_store_key(&token_address, &token_id)))
-                    .change("account", (None,account_address))
-                    .change("quantity", (None,delta.new_value));
-            },
-            OperationDelta::Update => {
-                changes
-                    .push_change("erc1155_balance", &delta.key, delta.ordinal, Operation::Update)
-                    .change("quantity", (delta.old_value,delta.new_value));
-            },
-            x => panic!("unsupported operation {:?}",x),
-        }
-    }
-}
+//         match delta.operation {
+//             OperationDelta::Create =>{
+//                 changes
+//                     .push_change("erc1155_balance", &delta.key, delta.ordinal, Operation::Create)
+//                     .change("collection", (None,token_address.clone()))
+//                     .change("token", (None,token_store_key(&token_address, &token_id)))
+//                     .change("account", (None,account_address))
+//                     .change("quantity", (None,delta.new_value));
+//             },
+//             OperationDelta::Update => {
+//                 changes
+//                     .push_change("erc1155_balance", &delta.key, delta.ordinal, Operation::Update)
+//                     .change("quantity", (delta.old_value,delta.new_value));
+//             },
+//             x => panic!("unsupported operation {:?}",x),
+//         }
+//     }
+// }

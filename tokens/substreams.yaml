@@ -38,5 +38,3 @@ modules:
       - map: common_events:map_collections_owners_db
     output:
       type: proto:sf.substreams.sink.database.v1.DatabaseChanges
-
-

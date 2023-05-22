@@ -15,7 +15,7 @@ use common:: remove_0x;
 use pb::zdexer::eth::erc1155::v1::{ Mint, Mints, Operators, Token, Tokens, Transfers, Address};
 use rpc::RpcTokenURI;
 use substreams::store::{
-    DeltaBigInt, DeltaProto, Deltas, StoreAdd, StoreAddBigInt, StoreNew, StoreSet, StoreSetProto, StoreSetIfNotExistsProto,
+     DeltaProto, Deltas, StoreAdd, StoreAddBigInt, StoreNew, StoreSet, StoreSetProto, StoreSetIfNotExistsProto,
     StoreSetIfNotExists
 };
 use substreams::{errors::Error, log, scalar::BigInt, Hex};
@@ -189,26 +189,18 @@ fn map_operator_entities(approvals: Operators) -> Result<EntityChanges, Error> {
     Ok(entity_changes)
 }
 
-#[substreams::handlers::map]
-fn map_balance_entities(deltas: Deltas<DeltaBigInt>) -> Result<EntityChanges, Error> {
-    let mut entity_changes: EntityChanges = Default::default();
-    graph::balance_entity_changes(&mut entity_changes, deltas);
-    Ok(entity_changes)
-}
 
 #[substreams::handlers::map]
 fn graph_out(
     token_entities: EntityChanges,
     transfer_entities: EntityChanges,
     operator_entities: EntityChanges,
-    balance_entities: EntityChanges,
 ) -> Result<EntityChanges, Error> {
     Ok(EntityChanges {
         entity_changes: [
             token_entities.entity_changes,
             transfer_entities.entity_changes,
             operator_entities.entity_changes,
-            balance_entities.entity_changes,
         ]
         .concat(),
     })
@@ -245,26 +237,16 @@ fn map_operators_db(approvals: Operators) -> Result<DatabaseChanges, Error> {
 }
 
 #[substreams::handlers::map]
-fn map_balances_db(deltas: Deltas<DeltaBigInt>) -> Result<DatabaseChanges, Error> {
-    let mut database_changes: DatabaseChanges = Default::default();
-    db::balance_db_changes(&mut database_changes, deltas);
-
-    Ok(database_changes)
-}
-
-#[substreams::handlers::map]
 fn db_out(
     tokens_db: DatabaseChanges,
     transfers_db: DatabaseChanges,
     approvals_db: DatabaseChanges,
-    balances_db: DatabaseChanges,
 ) -> Result<DatabaseChanges, Error> {
     Ok(DatabaseChanges {
         table_changes: [
             tokens_db.table_changes,
             transfers_db.table_changes,
             approvals_db.table_changes,
-            balances_db.table_changes,
         ]
         .concat(),
     })

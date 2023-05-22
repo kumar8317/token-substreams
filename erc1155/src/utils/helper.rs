@@ -2,6 +2,7 @@ use crate::abi::erc1155::events::{TransferBatch as ERC1155TransferBatchEvent, Tr
 use crate::pb::zdexer::eth::erc1155::v1::{Transfer, Operator};
 use substreams::scalar::BigInt;
 use substreams::{log, Hex};
+use substreams_ethereum::block_view::ReceiptView;
 use substreams_ethereum::pb::eth::v2 as eth;
 use substreams_ethereum::Event;
 use common::format_with_0x;
@@ -20,6 +21,10 @@ pub fn get_transfers(blk: &eth::Block) -> impl Iterator<Item = Transfer> + '_ {
                 }
             };
             if let Some(event) = ERC1155TransferSingleEvent::match_and_decode(log) {
+                let (from_balance, to_balance) =get_balances(
+                    event.value.clone(),
+                    receipt.transaction.calls.clone()
+                );
                 return vec![new_erc1155_single_transfer(
                     hash,
                     log.block_index,
@@ -32,7 +37,9 @@ pub fn get_transfers(blk: &eth::Block) -> impl Iterator<Item = Transfer> + '_ {
                     receipt.transaction.index,
                     receipt.transaction.r#type,
                     &receipt.transaction.from,
-                    value_native
+                    value_native,
+                    from_balance,
+                    to_balance
                 )];
             }
 
@@ -49,7 +56,8 @@ pub fn get_transfers(blk: &eth::Block) -> impl Iterator<Item = Transfer> + '_ {
                     receipt.transaction.index,
                     receipt.transaction.r#type,
                     &receipt.transaction.from,
-                    value_native
+                    value_native,
+                    receipt
                 );
             }
 
@@ -71,6 +79,8 @@ fn new_erc1155_single_transfer(
     transaction_type: i32,
     transaction_intiator: &[u8],
     value_native: String,
+    from_balance: BigInt,
+    to_balance: BigInt,
 ) -> Transfer {
     new_erc1155_transfer(
         hash,
@@ -88,7 +98,9 @@ fn new_erc1155_single_transfer(
         transaction_index,
         transaction_type,
         transaction_intiator,
-        value_native
+        value_native,
+        from_balance,
+        to_balance
     )
 }
 
@@ -105,6 +117,7 @@ fn new_erc1155_batch_transfer(
     transaction_type: i32,
     transaction_intiator: &[u8],
     value_native: String,
+    receipt: ReceiptView
 ) -> Vec<Transfer> {
     if event.ids.len() != event.values.len() {
         log::info!("There is a different count for ids ({}) and values ({}) in transaction {} for log at block index {}, ERC1155 spec says lenght should match, ignoring the log completely for now",
@@ -123,7 +136,10 @@ fn new_erc1155_batch_transfer(
         .enumerate()
         .map(|(i, id)| {
             let value = event.values.get(i).unwrap();
-
+            let (from_balance, to_balance) =get_balances(
+                value.clone(),
+                receipt.transaction.calls.clone()
+            );
             new_erc1155_transfer(
                 hash,
                 log_index,
@@ -140,7 +156,9 @@ fn new_erc1155_batch_transfer(
                 transaction_index,
                 transaction_type,
                 transaction_intiator,
-                value_native.clone()
+                value_native.clone(),
+                from_balance,
+                to_balance
             )
         })
         .collect()
@@ -163,6 +181,8 @@ fn new_erc1155_transfer(
     transaction_type: i32,
     transaction_intiator: &[u8],
     value_native: String,
+    from_balance: BigInt,
+    to_balance: BigInt,
 ) -> Transfer {
     Transfer {
         from: format_with_0x(Hex(from).to_string()),
@@ -180,7 +200,9 @@ fn new_erc1155_transfer(
         transaction_index,
         transaction_type,
         transaction_initiator:format_with_0x(Hex(transaction_intiator).to_string()),
-        value: value_native
+        value: value_native,
+        balance_from: from_balance.to_string(),
+        balance_to: to_balance.to_string()
     }
 }
 
@@ -206,3 +228,31 @@ pub fn get_approvals(blk: &eth::Block) -> impl Iterator<Item = Operator> + '_ {
         })
     })
 } 
+
+fn get_balances(value: BigInt, calls: Vec<eth::Call>) -> (BigInt, BigInt) {
+    let mut from_balance = BigInt::from(0);
+    let mut to_balance = BigInt::from(0);
+    for call in calls {
+        for storage_change in call.storage_changes {
+
+            let old_value = BigInt::from_unsigned_bytes_be(&storage_change.old_value);
+            let new_value = BigInt::from_unsigned_bytes_be(&storage_change.new_value);
+            let mut from = false;
+            let mut amount =  new_value.clone()-old_value.clone();
+
+            if amount < BigInt::from(0) {
+                amount = amount.neg();
+                from = true;
+            }
+            
+            if amount == value {
+                if from {
+                    from_balance = new_value.clone();
+                } else {
+                    to_balance = new_value.clone();
+                }
+            }
+        }
+    }
+    return (from_balance, to_balance);
+}

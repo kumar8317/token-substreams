@@ -1,5 +1,5 @@
 use std::str::FromStr;
-use substreams::{scalar::BigInt, Hex, store::{Deltas, DeltaBigInt}};
+use substreams::{scalar::BigInt, Hex};
 use substreams_entity_change::pb::entity::{entity_change::Operation, EntityChanges};
 
 use crate::{
@@ -43,7 +43,9 @@ pub fn transfer_entity_change(changes: &mut EntityChanges, transfers: Transfers)
             .change("block_hash", transfer.block_hash)
             .change("timestamp", transfer.timestamp)
             .change("transaction_index", transfer.transaction_index as u64)
-            .change("transaction_type", transfer.transaction_type);
+            .change("transaction_type", transfer.transaction_type)
+            .change("from_balance", BigInt::from_str(&transfer.balance_from).unwrap())
+            .change("to_balance", BigInt::from_str(&transfer.balance_to).unwrap());
     }
 }
 
@@ -102,34 +104,34 @@ pub fn approval_operator_entity_changes(changes: &mut EntityChanges, approvals: 
     }
 }
 
-pub fn balance_entity_changes(
-    changes:&mut EntityChanges,
-    deltas: Deltas<DeltaBigInt>
-){
-    use substreams::pb::substreams::store_delta::Operation as OperationDelta;
+// pub fn balance_entity_changes(
+//     changes:&mut EntityChanges,
+//     deltas: Deltas<DeltaBigInt>
+// ){
+//     use substreams::pb::substreams::store_delta::Operation as OperationDelta;
 
-    for delta in deltas.deltas {
-        let keyclone=delta.key.clone();
-        let account_address = keyclone.as_str().split('/').next().unwrap().to_string();
-        let token_address = keyclone.as_str().split('/').nth(1).unwrap().to_string();
-        let token_id = keyclone.as_str().split('/').nth(2).unwrap().to_string();
+//     for delta in deltas.deltas {
+//         let keyclone=delta.key.clone();
+//         let account_address = keyclone.as_str().split('/').next().unwrap().to_string();
+//         let token_address = keyclone.as_str().split('/').nth(1).unwrap().to_string();
+//         let token_id = keyclone.as_str().split('/').nth(2).unwrap().to_string();
 
-        match delta.operation {
-            OperationDelta::Create =>{
-                changes
-                    .push_change("ERC1155Balance", &delta.key, delta.ordinal, Operation::Create)
-                    .change("id", delta.key)
-                    .change("collection", token_address.clone())
-                    .change("token", token_store_key(&token_address, &token_id))
-                    .change("account", account_address)
-                    .change("quantity", delta.new_value);
-            },
-            OperationDelta::Update =>{
-                changes
-                    .push_change("ERC1155Balance", &delta.key, delta.ordinal, Operation::Update)
-                    .change("quantity", (delta.old_value,delta.new_value));
-            }
-            x=> panic!("unsupported operation {:?}",x),
-        }
-    }
-}
+//         match delta.operation {
+//             OperationDelta::Create =>{
+//                 changes
+//                     .push_change("ERC1155Balance", &delta.key, delta.ordinal, Operation::Create)
+//                     .change("id", delta.key)
+//                     .change("collection", token_address.clone())
+//                     .change("token", token_store_key(&token_address, &token_id))
+//                     .change("account", account_address)
+//                     .change("quantity", delta.new_value);
+//             },
+//             OperationDelta::Update =>{
+//                 changes
+//                     .push_change("ERC1155Balance", &delta.key, delta.ordinal, Operation::Update)
+//                     .change("quantity", (delta.old_value,delta.new_value));
+//             }
+//             x=> panic!("unsupported operation {:?}",x),
+//         }
+//     }
+// }

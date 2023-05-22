@@ -39,6 +39,8 @@ message Transfer {
   int32 transaction_type = 14;
   string transaction_initiator = 15;
   string value = 16;
+  string balance_from = 17;
+  string balance_to = 18;
 }
 
 message Mints {

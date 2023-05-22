@@ -5,7 +5,6 @@ type Account @entity {
   ERC721transferToEvents:[ERC721Transfer!] @derivedFrom(field:"to_address")
   ERC721operatorOperator: [ERC721Operator!]! @derivedFrom(field: "operator")
   ERC721operatorOwner: [ERC721Operator!]! @derivedFrom(field: "owner")
-  ERC1155balances: [ERC1155Balance!]! @derivedFrom(field: "account")
   ERC1155operatorOwner: [ERC1155Operator!]! @derivedFrom(field: "owner")
 	ERC1155operatorOperator: [ERC1155Operator!]! @derivedFrom(field: "operator")
   ERC1155transferFromEvents: [ERC1155Transfer!] @derivedFrom(field:"from_address")
@@ -81,7 +80,6 @@ type ERC1155Collection @entity {
   id: ID!
   owner_address: Account!
   tokens: [ERC1155Token!] @derivedFrom(field: "collection")
-  balances: [ERC1155Balance!] @derivedFrom(field:"collection")
   transfers: [ERC1155Transfer!] @derivedFrom(field:"collection")
   operators: [ERC1155Operator!] @derivedFrom(field:"collection")
 }
@@ -95,7 +93,6 @@ type ERC1155Token @entity {
   block_number_minted: BigInt,
   block_number: BigInt,
   mint_trx: String,
-  balances: [ERC1155Balance!] @derivedFrom(field:"token")
   transfers: [ERC1155Transfer!] @derivedFrom(field:"token")
 }
 
@@ -113,14 +110,8 @@ type ERC1155Transfer @entity {
   timestamp: BigInt
   transaction_index: BigInt
   transaction_type: Int
-}
-
-type ERC1155Balance @entity {
-  id: ID!
-  collection: ERC1155Collection!
-  token: ERC1155Token!
-  account: Account
-  quantity: BigInt!
+  from_balance: BigInt
+  to_balance: BigInt
 }
 
 type ERC1155Operator @entity {
